@@ -132,16 +132,18 @@ class TestCensysLookup:
 
 
 class TestPdfReport:
-    def test_pdf_generation_requires_weasyprint(self, monkeypatch):
-                                                                           
-                                                                 
-        from modules.report_generator import generate_pdf_report
-        try:
-            import weasyprint              
-            installed = True
-        except ImportError:
-            installed = False
+    def test_pdf_generation_requires_xhtml2pdf(self, monkeypatch):
+        import builtins
 
-        if not installed:
-            with pytest.raises(ImportError, match="weasyprint"):
-                generate_pdf_report("example.com", "domain", {}, None)
+        from modules.report_generator import generate_pdf_report
+
+        real_import = builtins.__import__
+
+        def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
+            if name == "xhtml2pdf" or name.startswith("xhtml2pdf."):
+                raise ImportError("xhtml2pdf not installed")
+            return real_import(name, globals, locals, fromlist, level)
+
+        monkeypatch.setattr(builtins, "__import__", fake_import)
+        with pytest.raises(ImportError, match="xhtml2pdf"):
+            generate_pdf_report("example.com", "domain", {}, None)

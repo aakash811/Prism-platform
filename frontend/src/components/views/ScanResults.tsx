@@ -5,29 +5,132 @@ import type { ScanResults, ScanMeta, OpsecFinding } from '@/lib/types';
 import { getReportUrl, getReportPdfUrl, generateAiSummary, sendAiChat, getMapData, getGraphData } from '@/lib/api';
 import { useTranslations } from '@/lib/i18n';
 
+type MapMarker = {
+  lat: number;
+  lng: number;
+  label: string;
+  city?: string;
+  country?: string;
+  org?: string;
+  ip?: string;
+  approximate?: boolean;
+  precision?: string;
+};
+
+type MapData = {
+  markers: MapMarker[];
+  center: { lat: number; lng: number } | null;
+  zoom?: number | null;
+};
+
+let leafletLoader: Promise<any> | null = null;
+
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+}
+
+function loadLeaflet(): Promise<any> {
+  const w = window as any;
+  if (w.L) return Promise.resolve(w.L);
+  if (leafletLoader) return leafletLoader;
+  leafletLoader = new Promise((resolve, reject) => {
+    if (!document.querySelector('link[data-leaflet]')) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      link.setAttribute('data-leaflet', '1');
+      document.head.appendChild(link);
+    }
+    const existing = document.querySelector('script[data-leaflet]') as HTMLScriptElement | null;
+    if (existing) {
+      existing.addEventListener('load', () => resolve((window as any).L), { once: true });
+      existing.addEventListener('error', () => reject(new Error('Failed to load Leaflet')), { once: true });
+      return;
+    }
+    const s = document.createElement('script');
+    s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    s.setAttribute('data-leaflet', '1');
+    s.onload = () => resolve((window as any).L);
+    s.onerror = () => reject(new Error('Failed to load Leaflet'));
+    document.head.appendChild(s);
+  });
+  return leafletLoader;
+}
+
 function MapView({ scanId, onCopy }: { scanId: string; onCopy: (value: string) => void }) {
-  const [data, setData] = useState<{ markers: { lat: number; lng: number; label: string; city?: string; country?: string; org?: string; ip?: string }[]; center: { lat: number; lng: number } | null } | null>(null);
+  const [data, setData] = useState<MapData | null>(null);
   const [error, setError] = useState('');
+  const mapHostRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<any>(null);
+  const markersRef = useRef<any>(null);
 
   useEffect(() => {
     getMapData(scanId)
-      .then((d: any) => { if (d.error) setError(d.error); else setData(d); })
+      .then((d: any) => { if (d.error) setError(d.error); else setData(d as MapData); })
       .catch(e => setError(e.message));
   }, [scanId]);
+
+  useEffect(() => {
+    if (!data?.markers?.length || !mapHostRef.current) return;
+    let cancelled = false;
+    loadLeaflet()
+      .then((L) => {
+        if (cancelled || !mapHostRef.current) return;
+        if (!mapRef.current) {
+          mapRef.current = L.map(mapHostRef.current, { zoomControl: true });
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap', maxZoom: 18,
+          }).addTo(mapRef.current);
+        }
+
+        if (markersRef.current) markersRef.current.clearLayers();
+        else markersRef.current = L.layerGroup().addTo(mapRef.current);
+
+        const bounds: [number, number][] = [];
+        for (const m of data.markers) {
+          if (!Number.isFinite(m.lat) || !Number.isFinite(m.lng)) continue;
+          bounds.push([m.lat, m.lng]);
+          const parts = [
+            m.ip ? `IP: ${escapeHtml(m.ip)}` : '',
+            m.city || m.country ? `Location: ${escapeHtml([m.city, m.country].filter(Boolean).join(', '))}` : '',
+            m.org ? `Organization: ${escapeHtml(m.org)}` : '',
+            `Coordinates: ${m.lat.toFixed(4)}, ${m.lng.toFixed(4)}`,
+            m.precision ? `Precision: ${escapeHtml(m.precision)}` : '',
+          ].filter(Boolean);
+          const popup = `<b>${escapeHtml(m.label || m.ip || 'Location')}</b><br/>${parts.join('<br/>')}`;
+          L.marker([m.lat, m.lng]).bindPopup(popup).addTo(markersRef.current);
+        }
+
+        if (bounds.length === 1) {
+          mapRef.current.setView(bounds[0], typeof data.zoom === 'number' ? data.zoom : 10);
+        } else if (bounds.length > 1) {
+          mapRef.current.fitBounds(bounds, { padding: [24, 24] });
+        }
+      })
+      .catch((e) => setError(e instanceof Error ? e.message : 'Failed to render map'));
+
+    return () => {
+      cancelled = true;
+    };
+  }, [data]);
+
+  useEffect(() => () => {
+    if (mapRef.current) {
+      mapRef.current.remove();
+      mapRef.current = null;
+      markersRef.current = null;
+    }
+  }, []);
 
   if (error) return <div className="text-red text-sm">{error}</div>;
   if (!data) return <div className="text-text-3 text-sm animate-pulse">Loading map…</div>;
   if (!data.markers?.length) return <div className="text-text-3 text-sm">No geolocation data available</div>;
 
   const m = data.markers[0];
-  const pad = 0.15;
-  const bbox = `${m.lng - pad},${m.lat - pad},${m.lng + pad},${m.lat + pad}`;
-  const iframeSrc = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${m.lat},${m.lng}`;
 
   return (
     <div>
-      <iframe src={iframeSrc} className="w-full rounded-md border border-border-1 h-64 sm:h-[360px]" style={{ border: 0 }}
-        title="IP Geolocation Map" loading="lazy" />
+      <div ref={mapHostRef} className="w-full rounded-md border border-border-1 h-64 sm:h-[360px]" />
       <div className="mt-3 grid grid-cols-2 gap-x-8 gap-y-1 text-[12px]">
         {m.ip && (
           <div className="dt-row">
@@ -41,6 +144,8 @@ function MapView({ scanId, onCopy }: { scanId: string; onCopy: (value: string) =
         {(m.city || m.country) && <div className="dt-row"><span className="dt-label">Location</span><span className="dt-value">{[m.city, m.country].filter(Boolean).join(', ')}</span></div>}
         {m.org && <div className="dt-row"><span className="dt-label">Organization</span><span className="dt-value">{m.org}</span></div>}
         <div className="dt-row"><span className="dt-label">Coordinates</span><span className="dt-value font-mono">{m.lat.toFixed(4)}, {m.lng.toFixed(4)}</span></div>
+        {m.precision && <div className="dt-row"><span className="dt-label">Precision</span><span className="dt-value">{m.precision}</span></div>}
+        {m.approximate && <div className="dt-row"><span className="dt-label">Approximate</span><span className="dt-value">Yes</span></div>}
       </div>
       {data.markers.length > 1 && (
         <div className="mt-3 text-[10px] text-text-3">{data.markers.length} locations found</div>

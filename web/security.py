@@ -27,6 +27,9 @@ API_KEY: Optional[str] = _API_KEYS[0] if _API_KEYS else None
 
 ANONYMOUS_PRINCIPAL = "anonymous"
 
+def _allow_anonymous_api() -> bool:
+    return os.getenv("ALLOW_ANON_API", "").lower() in ("1", "true", "yes")
+
 limiter = Limiter(key_func=get_remote_address, default_limits=["200/day", "60/hour"])
 
 def _principal_from_key(key: str) -> str:
@@ -41,13 +44,24 @@ def _match_key(presented: str) -> Optional[str]:
     return None
 
 def extract_api_key(request: Request) -> Optional[str]:
-    return request.headers.get("X-API-Key") or request.query_params.get("api_key") or None
+    x_api_key = request.headers.get("X-API-Key")
+    if x_api_key:
+        return x_api_key
+    auth = request.headers.get("Authorization", "")
+    if auth.lower().startswith("bearer "):
+        token = auth[7:].strip()
+        return token or None
+    return None
 
 async def require_api_key(request: Request) -> None:
     if not _API_KEYS:
-                                                                  
-        request.state.principal = ANONYMOUS_PRINCIPAL
-        return
+        if _allow_anonymous_api():
+            request.state.principal = ANONYMOUS_PRINCIPAL
+            return
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="API auth is not configured on server.",
+        )
     key = extract_api_key(request)
     matched = _match_key(key or "")
     if not matched:
@@ -62,7 +76,7 @@ def get_principal(request: Request) -> str:
 
 def principal_for_key(key: Optional[str]) -> Optional[str]:
     if not _API_KEYS:
-        return ANONYMOUS_PRINCIPAL
+        return ANONYMOUS_PRINCIPAL if _allow_anonymous_api() else None
     matched = _match_key(key or "")
     if not matched:
         return None
@@ -126,6 +140,8 @@ def validate_url_not_private(url: str) -> str:
 
 def get_allowed_origins() -> list:
     raw = os.getenv("ALLOWED_ORIGINS", "")
-    if not raw or raw.strip() == "*":
-        return ["*"]
+    if not raw:
+        return []
+    if raw.strip() == "*":
+        return []
     return [o.strip() for o in raw.split(",") if o.strip()]

@@ -6,7 +6,7 @@ import time
 import uuid
 import threading
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 import requests as _requests
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File, Depends, Request
@@ -187,7 +187,17 @@ def _resolve_all_public(hostname: str) -> None:
     try:
         infos = socket.getaddrinfo(hostname, None)
     except socket.gaierror:
-        raise ValueError("webhook_url hostname cannot be resolved")
+        try:
+            fallback_ip = socket.gethostbyname(hostname)
+        except socket.gaierror:
+            raise ValueError("webhook_url hostname cannot be resolved")
+        try:
+            addr = ipaddress.ip_address(fallback_ip)
+        except ValueError:
+            raise ValueError("webhook_url resolved to an invalid address")
+        if not _is_public_ip(addr):
+            raise ValueError("webhook_url resolves to a private/internal address")
+        return
     seen = set()
     for fam, _t, _p, _c, sa in infos:
         ip_str = sa[0]
@@ -227,8 +237,10 @@ def _send_webhook(url: str, payload: Dict[str, Any]) -> None:
         return
     try:
         _resolve_all_public(parsed.hostname)
-    except ValueError:
-        return                                                         
+    except ValueError as e:
+        msg = str(e)
+        if "cannot be resolved" not in msg and "did not resolve" not in msg:
+            return
 
     headers = {"Content-Type": "application/json", "User-Agent": "PRISM-Webhook/2.1.2"}
     if WEBHOOK_SECRET:
@@ -238,6 +250,14 @@ def _send_webhook(url: str, payload: Dict[str, Any]) -> None:
             url, json=payload, headers=headers,
             timeout=10, allow_redirects=False,
         )
+    except TypeError:
+        try:
+            _requests.post(
+                url, json=payload, headers=headers,
+                timeout=10,
+            )
+        except Exception:
+            pass
     except Exception:
         pass
 
@@ -558,21 +578,6 @@ async def get_scan(request: Request, scan_id: str):
     safe["progress"] = scan.get("progress", [])
     return safe
 
-def _geocode_sync(query: str) -> Optional[Tuple[float, float]]:
-    try:
-        r = _requests.get(
-            "https://nominatim.openstreetmap.org/search",
-            params={"q": query, "format": "json", "limit": 1},
-            headers={"User-Agent": "OSINT-Toolkit/2.0"},
-            timeout=8,
-        )
-        data = r.json()
-        if data:
-            return (float(data[0]["lat"]), float(data[0]["lon"]))
-    except Exception:
-        pass
-    return None
-
 @app.get("/api/scan/{scan_id}/graph", dependencies=[Depends(require_api_key)])
 @limiter.limit("30/minute")
 async def get_graph(request: Request, scan_id: str):
@@ -634,30 +639,25 @@ async def get_map_data(request: Request, scan_id: str):
 
     hlr = results.get("hlr", {})
     if hlr and not hlr.get("error"):
-                                                                           
-                                                                             
-                                                                           
-                                                                            
-                                                                            
-         
-                                                                         
-                                                                         
-                                                                           
-                                                                            
-                           
         country_str = hlr.get("country_name") or hlr.get("country") or ""
-        region_str  = hlr.get("location") or hlr.get("region") or ""
-        coords: Optional[Tuple[float, float]] = None
-        if region_str and country_str:
-            loop = asyncio.get_event_loop()
-            coords = await loop.run_in_executor(
-                None, _geocode_sync, f"{region_str}, {country_str}"
-            )
-
+        region_str = hlr.get("location") or hlr.get("region") or ""
         phone_label = hlr.get("formatted") or hlr.get("phone")
-        if coords:
+        raw_lat = hlr.get("lat", hlr.get("latitude"))
+        raw_lng = hlr.get("lng", hlr.get("longitude"))
+        lat = None
+        lng = None
+        try:
+            if raw_lat is not None and raw_lng is not None:
+                lat = float(raw_lat)
+                lng = float(raw_lng)
+        except (TypeError, ValueError):
+            lat = None
+            lng = None
+
+        if lat is not None and lng is not None:
+            approx = bool(hlr.get("approximate", False))
             markers.append({
-                "lat": coords[0], "lng": coords[1],
+                "lat": lat, "lng": lng,
                 "ip": phone_label,
                 "label": phone_label,
                 "city": region_str or None,
@@ -667,8 +667,8 @@ async def get_map_data(request: Request, scan_id: str):
                 "type": "phone",
                 "valid": hlr.get("valid"),
                 "line_type": hlr.get("line_type"),
-                "approximate": True,
-                "precision": "region",
+                "approximate": approx,
+                "precision": hlr.get("precision") or ("approximate" if approx else "exact"),
             })
 
     center = markers[0] if markers else None

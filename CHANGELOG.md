@@ -6,6 +6,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [2.2.0] — 2026-05-26
+
+### Added
+- Multilingual report translation layer via `modules/report_i18n.py` for EN/RU/DE report rendering.
+- New map i18n keys for precision metadata (`precision`, `approximate`) across EN/RU/DE locales.
+
+### Changed
+- Frontend map rendering switched from single-marker OSM iframe to Leaflet multi-marker rendering in `ScanResults`.
+- Frontend version labels updated to `v2.2.0` in topbar and loading screen.
+- Backend and frontend application versions bumped to `2.2.0`.
+
+### Fixed
+- `#27` map view now renders all discovered locations instead of only the first marker.
+- `#26` Wayback sensitive URL findings are included in dashboard flow (`wayback.interesting`) and displayed in results.
+- `#25` phone map no longer fabricates coordinates from region/country guesses; marker is shown only for explicit coordinates.
+- `#21` API key is no longer accepted via query string and permissive wildcard CORS default is removed.
+- `#20` auth bypass with missing API keys is removed by default; anonymous mode requires explicit `ALLOW_ANON_API=true`.
+- Comment/docstring cleanup completed across source files with build-safe manual TSX repairs.
+
+---
+
 ## [2.1.1] — 2026-05-18
 
 ### Added
