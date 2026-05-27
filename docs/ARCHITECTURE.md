@@ -42,9 +42,9 @@ and how to extend it with new modules.
 | `modules/*.py` | OSINT collection modules — one file per data source |
 | `modules/opsec_score.py` | Aggregated 0–100 exposure score |
 | `modules/graph_builder.py` | Entity → relationship graph data |
-| `modules/report_generator.py` | Jinja2 HTML + WeasyPrint PDF reports |
+| `modules/report_generator.py` | Jinja2 HTML + xhtml2pdf PDF reports |
 | `frontend/src/components` | UI: Sidebar, Topbar, ScanProgress, ScanResults |
-| `frontend/src/lib/i18n.tsx` | Lightweight i18n provider (en + ru) |
+| `frontend/src/lib/i18n.tsx` | Lightweight i18n provider (en + ru + de) |
 | `frontend/src/messages/*.json` | Locale string files |
 | `tests/` | pytest suite, monkeypatched (no live API calls) |
 | `docs/` | Architecture, screenshots, demo gifs |
@@ -65,7 +65,7 @@ and how to extend it with new modules.
 6. After all modules finish, `opsec_score.score_from_results()` aggregates findings
 7. `graph_builder.build_graph()` creates the visualization graph
 8. `report_generator.generate_html_report()` writes a self-contained HTML file
-9. PDF endpoint (`/api/scan/{id}/report/pdf`) renders the same HTML via WeasyPrint
+9. PDF endpoint (`/api/scan/{id}/report/pdf`) renders the same HTML via xhtml2pdf
 
 ### Real-time progress
 
@@ -179,7 +179,7 @@ weight. The frontend renders the score bars and findings tab from this output.
 
 Both HTML and PDF reports use the same Jinja2 template inside
 `modules/report_generator.py`. The HTML version embeds a Leaflet map (JS).
-The PDF variant strips JavaScript and is rendered with **WeasyPrint** so it
+The PDF variant strips JavaScript and is rendered with **xhtml2pdf** so it
 works fully offline with `@media print` styles.
 
 ---
@@ -200,8 +200,8 @@ schema and adding it to the `MESSAGES` map.
 
 ## Security model
 
-- **API key auth** — `X-API-Key` header or `?api_key=` query param
-- **CORS allowlist** — controlled via `CORS_ORIGINS` env
+- **API key auth** — `X-API-Key` header or `Authorization: Bearer` (query-param keys are rejected since v2.2)
+- **CORS allowlist** — controlled via `ALLOWED_ORIGINS` env (no wildcard by default)
 - **Rate limit** — `slowapi` global + per-endpoint
 - **SSRF guard** — `validate_url_not_private()` for any user-provided URLs
 - **Upload size limit** — `MAX_UPLOAD_BYTES` enforced before parsing
