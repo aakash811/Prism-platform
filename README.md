@@ -17,6 +17,8 @@
 [![GitHub stars](https://img.shields.io/github/stars/NovaCode37/Prism-platform?style=flat-square&logo=github&color=yellow)](https://github.com/NovaCode37/Prism-platform/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/NovaCode37/Prism-platform?style=flat-square&logo=github)](https://github.com/NovaCode37/Prism-platform/network/members)
 
+> If you find PRISM useful, please consider giving it a star — it helps others discover the project and motivates further development.
+
 <p align="center">
   <img src="docs/gifs/main.gif" alt="PRISM Boot Animation" width="720" />
 </p>
