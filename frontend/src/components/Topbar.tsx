@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Loader2, CheckCircle, XCircle, Github, Terminal, Sun, Moon, Menu, Languages } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, Github, Terminal, Sun, Moon, Menu, Languages, Book } from 'lucide-react';
 import { useTheme } from '@/lib/useTheme';
 import { useTranslations, SUPPORTED_LOCALES } from '@/lib/i18n';
 import { Logo } from './Logo';
@@ -106,6 +106,16 @@ export function Topbar({ status, onHome, onMenuToggle }: Props) {
         >
           {mounted ? (theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />) : <Sun size={15} />}
         </button>
+        <a
+          href="https://github.com/NovaCode37/Prism-platform#api"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-text-3 hover:text-text-1 transition-colors"
+          title="API Documentation"
+          aria-label="API Documentation"
+        >
+          <Book size={15} />
+        </a>
         <a
           href="https://github.com/NovaCode37/Prism-platform"
           target="_blank"

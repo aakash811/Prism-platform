@@ -5,7 +5,8 @@
     "complete": "Fertig",
     "failed": "Fehlgeschlagen",
     "toggleTheme": "Design wechseln",
-    "github": "GitHub"
+    "github": "GitHub",
+    "apiDocs":"API-Dokumentation"
   },
   "sidebar": {
     "target": "Ziel",

@@ -5,7 +5,8 @@
     "complete": "Complete",
     "failed": "Failed",
     "toggleTheme": "Toggle theme",
-    "github": "GitHub"
+    "github": "GitHub",
+    "apiDocs": "API Documentation"
   },
   "sidebar": {
     "target": "Target",
