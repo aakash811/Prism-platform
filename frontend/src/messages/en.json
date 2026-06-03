@@ -75,7 +75,8 @@
       "headers":  { "label": "Email Headers",   "desc": "SPF, DKIM, routing hops" },
       "crypto":   { "label": "Crypto Address", "desc": "Bitcoin & Ethereum" },
       "qr":       { "label": "QR Decode",       "desc": "Decode & analyze" },
-      "mac":      { "label": "MAC Lookup",      "desc": "Vendor lookup" }
+      "mac":      { "label": "MAC Lookup",      "desc": "Vendor lookup" },
+      "subnet":   { "label": "IP / Subnet",     "desc": "Network ranges & CIDR" }
     },
     "demo": {
       "line1": "This is a public demo with limited API quotas. Some modules (Shodan, VirusTotal) may be rate-limited.",

@@ -74,7 +74,8 @@
       "headers":  { "label": "En-têtes d'e-mail",     "desc": "SPF, DKIM, sauts de routage" },
       "crypto":   { "label": "Adresse crypto",         "desc": "Bitcoin et Ethereum" },
       "qr":       { "label": "Décodeur QR",            "desc": "Décoder et analyser" },
-      "mac":      { "label": "Recherche MAC",          "desc": "Recherche de fournisseur" }
+      "mac":      { "label": "Recherche MAC",          "desc": "Recherche de fournisseur" },
+      "subnet":   { "label": "IP / Sous-réseau", "desc": "Plages réseau & CIDR" }
     },
     "demo": {
       "line1": "Ceci est une démo publique avec des quotas API limités. Certains modules (Shodan, VirusTotal) peuvent être soumis à des limites de débit.",

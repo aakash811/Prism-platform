@@ -1,6 +1,6 @@
 export type ScanType = 'domain' | 'ip' | 'email' | 'phone' | 'username';
 export type ScanStatus = 'idle' | 'running' | 'completed' | 'failed';
-export type ToolMode = 'metadata' | 'headers' | 'crypto' | 'qr' | 'mac' | null;
+export type ToolMode = 'metadata' | 'headers' | 'crypto' | 'qr' | 'mac' | 'subnet' | null;
 
 export interface ScanMeta {
   id: string;

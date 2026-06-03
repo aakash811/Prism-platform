@@ -68,7 +68,8 @@
       "headers":  { "label": "Cabeceras de correo", "desc": "SPF, DKIM, saltos de enrutamiento" },
       "crypto":   { "label": "Dirección cripto", "desc": "Bitcoin y Ethereum" },
       "qr":       { "label": "Decodificar QR", "desc": "Decodificar y analizar" },
-      "mac":      { "label": "Búsqueda MAC", "desc": "Búsqueda de proveedor" }
+      "mac":      { "label": "Búsqueda MAC", "desc": "Búsqueda de proveedor" },
+      "subnet":   { "label": "IP / Subred",     "desc": "Rangos de red & CIDR" }
     },
     "demo": {
       "line1": "Esta es una demo pública con cuotas de API limitadas. Algunos módulos (Shodan, VirusTotal) pueden tener límite de velocidad.",

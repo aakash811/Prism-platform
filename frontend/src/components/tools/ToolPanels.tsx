@@ -365,10 +365,161 @@ function HeadersPanel() {
     </div>
   );
 }
+function SubnetPanel() {
+  const { t } = useTranslations();
 
+  // ── pure-JS subnet math (no external deps) ──────────────────────────────
+  function ipToInt(ip: string): number {
+    return ip.split('.').reduce((acc, oct) => (acc << 8) + parseInt(oct, 10), 0) >>> 0;
+  }
+  function intToIp(n: number): string {
+    return [(n >>> 24) & 0xff, (n >>> 16) & 0xff, (n >>> 8) & 0xff, n & 0xff].join('.');
+  }
+  function cidrToMask(cidr: number): number {
+    return cidr === 0 ? 0 : (0xffffffff << (32 - cidr)) >>> 0;
+  }
+  function maskToCidr(mask: number): number {
+    let n = mask >>> 0, count = 0;
+    while (n & 0x80000000) { count++; n = (n << 1) >>> 0; }
+    return count;
+  }
+  function isValidIp(ip: string): boolean {
+    const parts = ip.split('.');
+    if (parts.length !== 4) return false;
+    return parts.every(p => { const n = parseInt(p, 10); return !isNaN(n) && n >= 0 && n <= 255 && String(n) === p; });
+  }
+  function isValidMask(mask: string): boolean {
+    if (!isValidIp(mask)) return false;
+    const inv = (~ipToInt(mask)) >>> 0;
+    return (inv & (inv + 1)) === 0;
+  }
+  function getIpType(ip: string): string {
+    const n = ipToInt(ip);
+    if ((n >>> 24) === 10 || ((n >>> 16) & 0xfff0) === 0xac10 || (n >>> 16) === 0xc0a8) return 'Private (RFC 1918)';
+    if ((n >>> 24) === 127) return 'Loopback';
+    if ((n >>> 28) === 0xe) return 'Multicast';
+    return 'Public';
+  }
+
+  const [ip, setIp] = useState('');
+  const [prefix, setPrefix] = useState('24');
+  const [prefixMode, setPrefixMode] = useState<'cidr' | 'mask'>('cidr');
+  const [errors, setErrors] = useState<{ ip?: string; prefix?: string }>({});
+  const [result, setResult] = useState<null | {
+    cidr: number; networkAddress: string; broadcastAddress: string;
+    subnetMask: string; wildcardMask: string;
+    firstUsable: string; lastUsable: string;
+    usableHosts: number; totalHosts: number; ipType: string;
+  }>(null);
+
+  const run = () => {
+    const errs: { ip?: string; prefix?: string } = {};
+    if (!ip.trim()) errs.ip = 'IP address is required';
+    else if (!isValidIp(ip.trim())) errs.ip = 'Invalid IP (e.g. 192.168.1.0)';
+
+    let cidr = 0;
+    if (prefixMode === 'cidr') {
+      const n = parseInt(prefix.replace('/', ''), 10);
+      if (isNaN(n) || n < 0 || n > 32) errs.prefix = 'CIDR must be 0–32';
+      else cidr = n;
+    } else {
+      if (!isValidMask(prefix.trim())) errs.prefix = 'Invalid subnet mask';
+      else cidr = maskToCidr(ipToInt(prefix.trim()));
+    }
+
+    setErrors(errs);
+    if (Object.keys(errs).length > 0) return;
+
+    const mask = cidrToMask(cidr);
+    const ipInt = ipToInt(ip.trim());
+    const netInt = (ipInt & mask) >>> 0;
+    const bcastInt = (netInt | (~mask >>> 0)) >>> 0;
+    const total = Math.pow(2, 32 - cidr);
+    const usable = cidr >= 31 ? total : Math.max(0, total - 2);
+
+    setResult({
+      cidr,
+      networkAddress: intToIp(netInt),
+      broadcastAddress: intToIp(bcastInt),
+      subnetMask: intToIp(mask),
+      wildcardMask: intToIp(~mask >>> 0),
+      firstUsable: cidr >= 31 ? intToIp(netInt) : intToIp(netInt + 1),
+      lastUsable: cidr >= 31 ? intToIp(bcastInt) : intToIp(bcastInt - 1),
+      usableHosts: usable,
+      totalHosts: total,
+      ipType: getIpType(ip.trim()),
+    });
+  };
+
+  return (
+    <div>
+      <Card>
+        {/* Mode toggle */}
+        <div className="flex gap-2 mb-3">
+          {(['cidr', 'mask'] as const).map(m => (
+            <button key={m} onClick={() => { setPrefixMode(m); setPrefix(m === 'cidr' ? '24' : '255.255.255.0'); setErrors({}); }}
+              className={`px-3 py-1 text-[11px] rounded border transition-colors ${prefixMode === m ? 'border-blue/50 text-blue bg-blue/10' : 'border-border-2 text-text-3 hover:text-text-2'}`}>
+              {m === 'cidr' ? 'CIDR' : 'Subnet Mask'}
+            </button>
+          ))}
+        </div>
+
+        {/* Inputs */}
+        <div className="flex gap-2 flex-wrap mb-2">
+          <div className="flex flex-col gap-1 flex-1 min-w-[140px]">
+            <input className="input-field" value={ip} onChange={e => { setIp(e.target.value); setErrors(p => ({ ...p, ip: undefined })); }}
+              placeholder="192.168.1.0" onKeyDown={e => e.key === 'Enter' && run()} />
+            {errors.ip && <span className="text-[11px] text-red">{errors.ip}</span>}
+          </div>
+          <div className="flex flex-col gap-1 min-w-[120px]">
+            {prefixMode === 'cidr' ? (
+              <input className="input-field" value={prefix} onChange={e => { setPrefix(e.target.value); setErrors(p => ({ ...p, prefix: undefined })); }}
+                placeholder="/24" onKeyDown={e => e.key === 'Enter' && run()} />
+            ) : (
+              <input className="input-field" value={prefix} onChange={e => { setPrefix(e.target.value); setErrors(p => ({ ...p, prefix: undefined })); }}
+                placeholder="255.255.255.0" onKeyDown={e => e.key === 'Enter' && run()} />
+            )}
+            {errors.prefix && <span className="text-[11px] text-red">{errors.prefix}</span>}
+          </div>
+          <RunBtn loading={false} label="Calculate" onClick={run} />
+        </div>
+
+        {/* CIDR slider */}
+        {prefixMode === 'cidr' && (
+          <div className="mt-3">
+            <input type="range" min="0" max="32"
+              value={parseInt(prefix) || 24}
+              onChange={e => setPrefix(e.target.value)}
+              className="w-full accent-blue cursor-pointer" />
+            <div className="flex justify-between text-[10px] text-text-3 mt-0.5">
+              {[0, 8, 16, 24, 32].map(n => (
+                <button key={n} onClick={() => setPrefix(String(n))} className="hover:text-blue transition-colors">/{n}</button>
+              ))}
+            </div>
+          </div>
+        )}
+      </Card>
+
+      {result && (
+        <Card>
+          <Row label="Network Address" value={`${result.networkAddress}/${result.cidr}`} />
+          <Row label="Subnet Mask" value={result.subnetMask} />
+          <Row label="Wildcard Mask" value={result.wildcardMask} />
+          <Row label="Broadcast Address" value={result.broadcastAddress} />
+          <Row label="First Usable IP" value={result.firstUsable} />
+          <Row label="Last Usable IP" value={result.lastUsable} />
+          <Row label="Usable Hosts" value={result.usableHosts.toLocaleString()} />
+          <Row label="Total Addresses" value={result.totalHosts.toLocaleString()} />
+          <Row label="IP Type" value={result.ipType} />
+        </Card>
+      )}
+    </div>
+  );
+}
 const TOOL_TITLES: Record<string, string> = {
   crypto: 'Crypto Address Lookup', qr: 'QR Code Decoder',
   metadata: 'File Metadata & GEOINT', headers: 'Email Header Analyzer', mac: 'MAC Lookup',
+  subnet: 'IP / Subnet Calculator',
 };
 
 interface Props {
@@ -395,6 +546,7 @@ export function ToolPanels({ mode, onBack }: Props) {
       {activePanel === 'qr' && <QrPanel />}
       {activePanel === 'metadata' && <MetadataPanel />}
       {activePanel === 'headers' && <HeadersPanel />}
+      {activePanel === 'subnet' && <SubnetPanel />} 
       {activePanel === 'mac' && <MacPanel />}
     </div>
   );

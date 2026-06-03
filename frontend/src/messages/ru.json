@@ -75,7 +75,8 @@
       "headers":  { "label": "Заголовки письма",   "desc": "SPF, DKIM, маршрут" },
       "crypto":   { "label": "Крипто-адрес",     "desc": "Bitcoin и Ethereum" },
       "qr":       { "label": "Декодер QR",         "desc": "Декодирование и анализ" },
-      "mac":      { "label": "MAC Lookup",        "desc": "Поиск производителя" }
+      "mac":      { "label": "MAC Lookup",        "desc": "Поиск производителя" },
+      "subnet":   { "label": "IP / Подсеть",    "desc": "Диапазоны сети и CIDR" }
     },
     "demo": {
       "line1": "Это публичное демо с ограниченными квотами API. Некоторые модули (Shodan, VirusTotal) могут быть ограничены частотой запросов.",

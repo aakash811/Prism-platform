@@ -5,10 +5,11 @@ import { useTranslations } from '@/lib/i18n';
 import { Logo } from '../Logo';
 import type { ToolMode } from '@/lib/types';
 
-const TOOL_IDS = ['metadata', 'headers', 'crypto', 'qr', 'mac'] as const;
+const TOOL_IDS = ['metadata', 'headers', 'crypto', 'qr', 'mac', 'subnet'] as const;
 type ToolId = typeof TOOL_IDS[number];
 
 const ICONS: Record<ToolId, React.ElementType> = {
+  subnet: Globe,
   metadata: FileText,
   headers: Mail,
   crypto: Bitcoin,
