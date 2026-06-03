@@ -6,6 +6,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [Unreleased]
+
+### Added
+- **Standard module status enum** (`ok` / `skipped` / `rate_limited` / `error`) in `modules/module_status.py`, with `classify()`, `reason_for()`, and `annotate()` helpers (#61).
+- **Graceful degradation for key-dependent modules** — Shodan, VirusTotal, AbuseIPDB, Censys, Leak-Lookup/HIBP, and Telegram now report `skipped` when an API key is absent and `rate_limited` on HTTP 429, instead of failing with a hard error (#61).
+- **Per-module status badges in the dashboard** — live progress chips and result cards now render the module status (skipped/rate-limited shown with their reason), and the scan engine propagates the status over WebSocket (#61).
+- **`HIBP_API_KEY` config option** — the HIBP breach lookup now reads a real key from the environment and skips up-front when it is absent, instead of always hitting an unauthenticated 401 (#61).
+
+### Changed
+- The scan engine (`web/app.py`) derives each module's status from its result, persists it for the results view, and only caches genuinely successful (`ok`) results so a missing key is not frozen in cache once configured (#61).
+
+---
+
 ## [2.3.0] — 2026-06-03
 
 ### Added

@@ -2,6 +2,17 @@ export type ScanType = 'domain' | 'ip' | 'email' | 'phone' | 'username';
 export type ScanStatus = 'idle' | 'running' | 'completed' | 'failed';
 export type ToolMode = 'metadata' | 'headers' | 'crypto' | 'qr' | 'mac' | 'subnet' | null;
 
+/** Standard per-module result status (mirrors modules/module_status.py). */
+export type ModuleStatus = 'ok' | 'skipped' | 'rate_limited' | 'error';
+/** Live status shown on the progress badges while a scan runs. */
+export type LiveModuleStatus = ModuleStatus | 'running';
+
+/** Status fields attached by key-dependent modules. */
+export interface ModuleStatusFields {
+  status?: ModuleStatus;
+  status_reason?: string;
+}
+
 export interface ScanMeta {
   id: string;
   target: string;
@@ -73,7 +84,7 @@ export interface BlackbirdResult {
   response_time?: number;
 }
 
-export interface VirusTotalData {
+export interface VirusTotalData extends ModuleStatusFields {
   malicious?: number;
   suspicious?: number;
   harmless?: number;
@@ -83,7 +94,7 @@ export interface VirusTotalData {
   error?: string;
 }
 
-export interface AbuseIPDBData {
+export interface AbuseIPDBData extends ModuleStatusFields {
   abuse_score?: number;
   total_reports?: number;
   isp?: string;
@@ -92,7 +103,7 @@ export interface AbuseIPDBData {
   error?: string;
 }
 
-export interface ShodanData {
+export interface ShodanData extends ModuleStatusFields {
   open_ports?: number[];
   vulns?: string[];
   services?: { port: number; transport: string; product?: string; version?: string }[];
@@ -120,7 +131,7 @@ export interface PhoneData {
   error?: string;
 }
 
-export interface TelegramData {
+export interface TelegramData extends ModuleStatusFields {
   username?: string;
   found?: boolean;
   name?: string;
@@ -158,7 +169,7 @@ export interface SmtpData {
   error?: string;
 }
 
-export interface BreachData {
+export interface BreachData extends ModuleStatusFields {
   found?: boolean;
   total?: number;
   breaches?: (string | { name?: string; title?: string })[];
@@ -190,7 +201,7 @@ export interface ScanResults {
   graph?: unknown;
 }
 
-export interface CensysData {
+export interface CensysData extends ModuleStatusFields {
   error?: string | null;
   ip?: string;
   domain?: string;

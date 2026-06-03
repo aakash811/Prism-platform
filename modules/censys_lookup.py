@@ -5,6 +5,8 @@ from typing import Any, Dict, List
 
 import requests
 
+from modules.module_status import annotate, OK, SKIPPED, RATE_LIMITED, ERROR
+
 CENSYS_API_ID = os.getenv("CENSYS_API_ID", "")
 CENSYS_API_SECRET = os.getenv("CENSYS_API_SECRET", "")
 CENSYS_BASE = "https://search.censys.io/api"
@@ -23,11 +25,11 @@ class CensysLookup:
         return (self.api_id, self.api_secret)
 
     def _err_no_key(self) -> Dict[str, Any]:
-        return {
-            "error": "CENSYS_API_ID and CENSYS_API_SECRET not set in .env",
-            "results": [],
-            "total": 0,
-        }
+        return annotate(
+            {"results": [], "total": 0},
+            SKIPPED,
+            "No API key configured (CENSYS_API_ID / CENSYS_API_SECRET)",
+        )
 
     def search_ip(self, ip: str) -> Dict[str, Any]:
         auth = self._auth()
@@ -41,15 +43,18 @@ class CensysLookup:
                 headers={"User-Agent": "PRISM-OSINT/2.1"},
             )
             if r.status_code == 401:
-                return {"error": "Invalid Censys credentials", "results": [], "total": 0}
+                return annotate({"results": [], "total": 0}, ERROR, "Invalid Censys credentials")
+            if r.status_code == 429:
+                return annotate({"results": [], "total": 0}, RATE_LIMITED, "Censys API rate limit reached")
             if r.status_code == 404:
-                return {"error": None, "results": [], "total": 0, "ip": ip}
+                return annotate({"results": [], "total": 0, "ip": ip}, OK)
             if r.status_code != 200:
-                return {"error": f"Censys HTTP {r.status_code}", "results": [], "total": 0}
+                return annotate({"results": [], "total": 0}, ERROR, f"Censys HTTP {r.status_code}")
             data = r.json().get("result", {})
             services = data.get("services") or []
             return {
                 "error": None,
+                "status": OK,
                 "ip": ip,
                 "asn": (data.get("autonomous_system") or {}).get("asn"),
                 "as_name": (data.get("autonomous_system") or {}).get("name"),
@@ -69,7 +74,7 @@ class CensysLookup:
                 "total": len(services),
             }
         except Exception as e:
-            return {"error": str(e)[:200], "results": [], "total": 0}
+            return annotate({"results": [], "total": 0}, ERROR, str(e)[:200])
 
     def search_domain(self, domain: str) -> Dict[str, Any]:
         auth = self._auth()
@@ -87,12 +92,14 @@ class CensysLookup:
                 },
             )
             if r.status_code == 401:
-                return {"error": "Invalid Censys credentials", "results": [], "total": 0}
+                return annotate({"results": [], "total": 0}, ERROR, "Invalid Censys credentials")
+            if r.status_code == 429:
+                return annotate({"results": [], "total": 0}, RATE_LIMITED, "Censys API rate limit reached")
             if r.status_code == 404:
-                                                                 
-                return {"error": None, "results": [], "total": 0, "domain": domain}
+
+                return annotate({"results": [], "total": 0, "domain": domain}, OK)
             if r.status_code != 200:
-                return {"error": f"Censys HTTP {r.status_code}", "results": [], "total": 0}
+                return annotate({"results": [], "total": 0}, ERROR, f"Censys HTTP {r.status_code}")
 
             data = r.json().get("result", {})
             hits = data.get("hits") or []
@@ -111,10 +118,11 @@ class CensysLookup:
                 })
             return {
                 "error": None,
+                "status": OK,
                 "domain": domain,
                 "subdomains": sorted(subdomains),
                 "certificates": certs[:25],
                 "total": data.get("total", len(hits)),
             }
         except Exception as e:
-            return {"error": str(e)[:200], "results": [], "total": 0}
+            return annotate({"results": [], "total": 0}, ERROR, str(e)[:200])

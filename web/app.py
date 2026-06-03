@@ -23,6 +23,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import config
 
 from modules.graph_builder import build_graph
+from modules.module_status import classify, reason_for, OK, ERROR
 from modules.opsec_score import score_from_results
 from modules.report_generator import generate_html_report, generate_pdf_report
 from modules.webhook_formatters import format_slack, format_discord
@@ -299,13 +300,27 @@ async def _push(scan_id: str, msg: Dict) -> None:
 
 _CACHED_MODULES = {"shodan", "hlr", "virustotal", "abuseipdb", "geoip"}
 
+def _done_message(name: str, result: Any, cached: bool = False) -> Dict[str, Any]:
+    status = classify(result)
+    msg: Dict[str, Any] = {"type": "module_done", "module": name, "status": status}
+    if cached:
+        msg["cached"] = True
+    reason = reason_for(result)
+    if reason and status != OK:
+        msg["reason"] = reason
+        if status == ERROR:
+            msg["error"] = reason
+    return msg
+
+
 async def _run_module(scan_id: str, name: str, coro_or_func, *args, **kwargs) -> Any:
     await _push(scan_id, {"type": "module_start", "module": name})
     cache_target = args[0] if args else None
     if name in _CACHED_MODULES and cache_target:
         cached = _get_cached(name, str(cache_target))
-        if cached is not None:
-            await _push(scan_id, {"type": "module_done", "module": name, "status": "ok", "cached": True})
+        # Ignore legacy non-OK cache entries so the module can re-run.
+        if cached is not None and classify(cached) == OK:
+            await _push(scan_id, _done_message(name, cached, cached=True))
             return cached
     try:
         if asyncio.iscoroutinefunction(coro_or_func):
@@ -313,13 +328,17 @@ async def _run_module(scan_id: str, name: str, coro_or_func, *args, **kwargs) ->
         else:
             loop = asyncio.get_event_loop()
             result = await loop.run_in_executor(None, lambda: coro_or_func(*args, **kwargs))
-        if name in _CACHED_MODULES and cache_target and not (isinstance(result, dict) and result.get("error")):
+        status = classify(result)
+        if isinstance(result, dict) and "status" not in result:
+            result["status"] = status
+        # Cache only successful results so a missing key is not frozen in cache.
+        if name in _CACHED_MODULES and cache_target and status == OK:
             _set_cache(name, str(cache_target), result)
-        await _push(scan_id, {"type": "module_done", "module": name, "status": "ok"})
+        await _push(scan_id, _done_message(name, result))
         return result
     except Exception as exc:
-        await _push(scan_id, {"type": "module_done", "module": name, "status": "error", "error": str(exc)})
-        return {"error": str(exc)}
+        await _push(scan_id, {"type": "module_done", "module": name, "status": ERROR, "error": str(exc)})
+        return {"error": str(exc), "status": ERROR}
 
 async def _execute_scan(scan_id: str, target: str, scan_type: str, modules: list, webhook_url: Optional[str] = None) -> None:
     results: Dict[str, Any] = {}
@@ -484,7 +503,7 @@ async def _execute_scan(scan_id: str, target: str, scan_type: str, modules: list
         await _push(scan_id, {"type": "module_start", "module": "opsec_score"})
         opsec = score_from_results(results)
         results["opsec_score"] = opsec
-        await _push(scan_id, {"type": "module_done", "module": "opsec_score", "status": "ok"})
+        await _push(scan_id, {"type": "module_done", "module": "opsec_score", "status": OK})
 
         graph = build_graph(target, scan_type, results)
         results["graph"] = graph

@@ -1,18 +1,27 @@
 'use client';
-import { Terminal, Check, X, Loader2, Circle } from 'lucide-react';
+import { Terminal, Check, X, Loader2, Circle, Ban, Hourglass } from 'lucide-react';
 import { useTranslations } from '@/lib/i18n';
+import type { LiveModuleStatus } from '@/lib/types';
 
 interface Props {
   log: string[];
   target: string;
-  moduleStatuses?: Record<string, 'running' | 'ok' | 'error'>;
+  moduleStatuses?: Record<string, LiveModuleStatus>;
   totalModules?: number;
 }
 
+const STATUS_STYLE: Record<LiveModuleStatus, { cls: string; Icon: typeof Check; spin?: boolean }> = {
+  ok: { cls: 'text-green border-green/30 bg-green/5', Icon: Check },
+  error: { cls: 'text-red border-red/30 bg-red/5', Icon: X },
+  skipped: { cls: 'text-text-3 border-border-1 bg-surface-2', Icon: Ban },
+  rate_limited: { cls: 'text-yellow border-yellow/30 bg-yellow/5', Icon: Hourglass },
+  running: { cls: 'text-blue border-blue/30 bg-blue/5', Icon: Loader2, spin: true },
+};
+
 export function ScanProgress({ log, target, moduleStatuses = {}, totalModules = 0 }: Props) {
   const { t } = useTranslations();
-  const entries = Object.entries(moduleStatuses);
-  const completed = entries.filter(([, s]) => s === 'ok' || s === 'error').length;
+  const entries = Object.entries(moduleStatuses) as [string, LiveModuleStatus][];
+  const completed = entries.filter(([, s]) => s !== 'running').length;
   const cap = Math.max(totalModules, entries.length);
   const percent = cap > 0 ? Math.min(100, Math.round((completed / cap) * 100)) : 0;
 
@@ -40,13 +49,12 @@ export function ScanProgress({ log, target, moduleStatuses = {}, totalModules = 
           {entries.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mt-3">
               {entries.map(([mod, status]) => {
-                const cls = status === 'ok' ? 'text-green border-green/30 bg-green/5'
-                  : status === 'error' ? 'text-red border-red/30 bg-red/5'
-                  : 'text-blue border-blue/30 bg-blue/5';
-                const Icon = status === 'ok' ? Check : status === 'error' ? X : status === 'running' ? Loader2 : Circle;
+                const style = STATUS_STYLE[status] ?? { cls: 'text-blue border-blue/30 bg-blue/5', Icon: Circle };
+                const Icon = style.Icon;
+                const label = status === 'rate_limited' ? `${mod} (rate limited)` : status === 'skipped' ? `${mod} (skipped)` : mod;
                 return (
-                  <span key={mod} className={`inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded border ${cls}`}>
-                    <Icon size={10} className={status === 'running' ? 'spin' : ''} />
+                  <span key={mod} title={label} className={`inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded border ${style.cls}`}>
+                    <Icon size={10} className={style.spin ? 'spin' : ''} />
                     {mod}
                   </span>
                 );

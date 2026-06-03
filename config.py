@@ -5,6 +5,7 @@ load_dotenv()
 
 NUMVERIFY_API_KEY = os.getenv("NUMVERIFY_API_KEY", "")
 LEAK_LOOKUP_API_KEY = os.getenv("LEAK_LOOKUP_API_KEY", "")
+HIBP_API_KEY = os.getenv("HIBP_API_KEY", "")
 IPINFO_API_KEY = os.getenv("IPINFO_API_KEY", "")
 
 VIRUSTOTAL_API_KEY = os.getenv("VIRUSTOTAL_API_KEY", "")

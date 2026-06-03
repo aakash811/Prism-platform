@@ -3,6 +3,7 @@ from typing import Dict, Any, Optional
 import sys
 sys.path.append('..')
 from config import Colors, VIRUSTOTAL_API_KEY, ABUSEIPDB_API_KEY
+from modules.module_status import annotate, print_status_notice, OK, SKIPPED, RATE_LIMITED, ERROR
 
 
 class VirusTotal:
@@ -15,7 +16,7 @@ class VirusTotal:
 
     def _get(self, endpoint: str) -> Dict:
         if not self.api_key:
-            return {"error": "VIRUSTOTAL_API_KEY not set in .env"}
+            return annotate({}, SKIPPED, "No API key configured (VIRUSTOTAL_API_KEY)")
         try:
             r = requests.get(
                 f"{self.BASE_URL}{endpoint}",
@@ -26,13 +27,19 @@ class VirusTotal:
                 return r.json()
             if r.status_code == 404:
                 return {"error": "Not found in VirusTotal database"}
+            if r.status_code == 429:
+                return annotate({}, RATE_LIMITED, "VirusTotal API rate limit reached")
             return {"error": f"API returned {r.status_code}: {r.text[:200]}"}
         except Exception as e:
             return {"error": str(e)}
 
+    @staticmethod
+    def _failed(raw: Dict) -> bool:
+        return bool(raw.get("error")) or raw.get("status") in (SKIPPED, RATE_LIMITED, ERROR)
+
     def check_ip(self, ip: str) -> Dict[str, Any]:
         raw = self._get(f"/ip_addresses/{ip}")
-        if "error" in raw:
+        if self._failed(raw):
             return {"query": ip, "type": "ip", **raw}
 
         attrs = raw.get("data", {}).get("attributes", {})
@@ -51,11 +58,12 @@ class VirusTotal:
             "reputation": attrs.get("reputation", 0),
             "tags": attrs.get("tags", []),
             "error": None,
+            "status": OK,
         }
 
     def check_domain(self, domain: str) -> Dict[str, Any]:
         raw = self._get(f"/domains/{domain}")
-        if "error" in raw:
+        if self._failed(raw):
             return {"query": domain, "type": "domain", **raw}
 
         attrs = raw.get("data", {}).get("attributes", {})
@@ -73,11 +81,15 @@ class VirusTotal:
             "creation_date": attrs.get("creation_date"),
             "tags": attrs.get("tags", []),
             "error": None,
+            "status": OK,
         }
 
     def check_url(self, url: str) -> Dict[str, Any]:
         if not self.api_key:
-            return {"query": url, "type": "url", "error": "VIRUSTOTAL_API_KEY not set in .env"}
+            return annotate(
+                {"query": url, "type": "url"}, SKIPPED,
+                "No API key configured (VIRUSTOTAL_API_KEY)",
+            )
         try:
             submit_r = requests.post(
                 f"{self.BASE_URL}/urls",
@@ -85,6 +97,11 @@ class VirusTotal:
                 data={"url": url},
                 timeout=15,
             )
+            if submit_r.status_code == 429:
+                return annotate(
+                    {"query": url, "type": "url"}, RATE_LIMITED,
+                    "VirusTotal API rate limit reached",
+                )
             if submit_r.status_code not in (200, 201):
                 return {"query": url, "type": "url", "error": f"Submit failed: {submit_r.status_code}"}
 
@@ -111,6 +128,7 @@ class VirusTotal:
                 "harmless": stats.get("harmless", 0),
                 "undetected": stats.get("undetected", 0),
                 "error": None,
+                "status": OK,
             }
         except Exception as e:
             return {"query": url, "type": "url", "error": str(e)}
@@ -120,6 +138,8 @@ class VirusTotal:
         print(f"{Colors.BOLD}VirusTotal: {result['query']}{Colors.RESET}")
         print(f"{Colors.CYAN}{'='*60}{Colors.RESET}")
 
+        if print_status_notice(result):
+            return
         if result.get("error"):
             print(f"{Colors.RED}Error: {result['error']}{Colors.RESET}")
             return
@@ -173,8 +193,7 @@ class AbuseIPDB:
         }
 
         if not self.api_key:
-            result["error"] = "ABUSEIPDB_API_KEY not set in .env"
-            return result
+            return annotate(result, SKIPPED, "No API key configured (ABUSEIPDB_API_KEY)")
 
         try:
             r = requests.get(
@@ -198,10 +217,13 @@ class AbuseIPDB:
                         "last_reported": data.get("lastReportedAt"),
                     }
                 )
+                result["status"] = OK
+            elif r.status_code == 429:
+                return annotate(result, RATE_LIMITED, "AbuseIPDB API rate limit reached")
             else:
                 result["error"] = f"AbuseIPDB returned {r.status_code}"
         except Exception as e:
-            result["error"] = str(e)
+            return annotate(result, ERROR, str(e))
 
         return result
 
@@ -210,6 +232,8 @@ class AbuseIPDB:
         print(f"{Colors.BOLD}AbuseIPDB: {result['ip']}{Colors.RESET}")
         print(f"{Colors.CYAN}{'='*60}{Colors.RESET}")
 
+        if print_status_notice(result):
+            return
         if result.get("error"):
             print(f"{Colors.RED}Error: {result['error']}{Colors.RESET}")
             return

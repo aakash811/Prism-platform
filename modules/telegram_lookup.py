@@ -4,6 +4,7 @@ from typing import Dict, Any, Optional
 import sys
 sys.path.append('..')
 from config import Colors
+from modules.module_status import annotate, print_status_notice, OK, SKIPPED, ERROR
 
 
 class TelegramLookup:
@@ -40,6 +41,7 @@ class TelegramLookup:
 
             if r.status_code == 404:
                 result["found"] = False
+                result["status"] = OK
                 return result
 
             html = r.text
@@ -79,10 +81,12 @@ class TelegramLookup:
             if subs_match:
                 result["subscribers"] = subs_match.group(1).strip()
 
+            result["status"] = OK
+
         except requests.exceptions.ConnectionError:
-            result["error"] = "Connection error — Telegram may be blocked. Try with VPN."
+            return annotate(result, ERROR, "Connection error — Telegram may be blocked. Try with VPN.")
         except Exception as e:
-            result["error"] = str(e)
+            return annotate(result, ERROR, str(e))
 
         return result
 
@@ -107,6 +111,7 @@ class TelegramLookup:
                 if data.get("ok") and data.get("result"):
                     chat = data["result"]
                     result["found"] = True
+                    result["status"] = OK
                     result["name"] = (chat.get("first_name", "") + " " + chat.get("last_name", "")).strip() or chat.get("title")
                     result["username"] = chat.get("username")
                     result["entity_type"] = chat.get("type", "unknown")
@@ -118,7 +123,7 @@ class TelegramLookup:
             except Exception as e:
                 result["error"] = str(e)
         else:
-            result["error"] = "ID lookup requires TELEGRAM_BOT_TOKEN — add to .env"
+            annotate(result, SKIPPED, "ID lookup requires TELEGRAM_BOT_TOKEN — add to .env")
             result["hint"] = "Create a bot via @BotFather (free) and add the token to .env"
 
         return result
@@ -131,6 +136,10 @@ class TelegramLookup:
 
     def print_result(self, result: Dict[str, Any]) -> None:
         print(f"\n{Colors.BOLD}Telegram Lookup{Colors.RESET}")
+        if print_status_notice(result):
+            if result.get("hint"):
+                print(f"{Colors.YELLOW}Hint:{Colors.RESET} {result['hint']}")
+            return
         if result.get("error"):
             print(f"{Colors.RED}Error:{Colors.RESET} {result['error']}")
             if result.get("hint"):

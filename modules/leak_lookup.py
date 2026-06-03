@@ -3,7 +3,8 @@ import hashlib
 from typing import Dict, Any, List, Optional
 import sys
 sys.path.append('..')
-from config import LEAK_LOOKUP_API_KEY, Colors
+from config import LEAK_LOOKUP_API_KEY, HIBP_API_KEY, Colors
+from modules.module_status import annotate, classify, print_status_notice, OK, SKIPPED, RATE_LIMITED, ERROR
 
 
 class LeakLookup:
@@ -13,6 +14,7 @@ class LeakLookup:
 
     def __init__(self):
         self.leak_lookup_key = LEAK_LOOKUP_API_KEY
+        self.hibp_key = HIBP_API_KEY
 
     def check_email_hibp(self, email: str) -> Dict[str, Any]:
         result = {
@@ -23,9 +25,12 @@ class LeakLookup:
             "error": None
         }
 
+        if not self.hibp_key:
+            return annotate(result, SKIPPED, "No API key configured (HIBP_API_KEY)")
+
         headers = {
             "User-Agent": "OSINT-Tool",
-            "hibp-api-key": ""
+            "hibp-api-key": self.hibp_key,
         }
 
         try:
@@ -40,6 +45,7 @@ class LeakLookup:
                 breaches = response.json()
                 result["breached"] = True
                 result["total_breaches"] = len(breaches)
+                result["status"] = OK
 
                 for breach in breaches:
                     result["breaches"].append({
@@ -56,8 +62,11 @@ class LeakLookup:
 
             elif response.status_code == 404:
                 result["breached"] = False
+                result["status"] = OK
             elif response.status_code == 401:
-                result["error"] = "HIBP API key required for breach lookup"
+                annotate(result, SKIPPED, "Invalid HIBP API key")
+            elif response.status_code == 429:
+                annotate(result, RATE_LIMITED, "HIBP API rate limit reached")
             else:
                 result["error"] = f"HIBP returned status {response.status_code}"
 
@@ -109,8 +118,7 @@ class LeakLookup:
         }
 
         if not self.leak_lookup_key:
-            result["error"] = "Leak-Lookup API key not configured"
-            return result
+            return annotate(result, SKIPPED, "No API key configured (LEAK_LOOKUP_API_KEY)")
 
         try:
             response = requests.post(
@@ -127,6 +135,7 @@ class LeakLookup:
                 data = response.json()
                 if data.get("error") == "false" and data.get("message"):
                     result["found"] = True
+                    result["status"] = OK
                     if isinstance(data["message"], dict):
                         for source, entries in data["message"].items():
                             result["leaks"].append({
@@ -135,8 +144,11 @@ class LeakLookup:
                             })
                 elif data.get("message") == "Not found":
                     result["found"] = False
+                    result["status"] = OK
                 else:
                     result["error"] = data.get("message", "Unknown response")
+            elif response.status_code == 429:
+                annotate(result, RATE_LIMITED, "Leak-Lookup API rate limit reached")
             else:
                 result["error"] = f"API returned status {response.status_code}"
 
@@ -163,12 +175,40 @@ class LeakLookup:
             result["is_compromised"] = True
             result["total_breaches"] += len(result["leak_lookup"]["leaks"])
 
+        # A working source wins; otherwise surface rate-limited/skipped state.
+        sub_statuses = [classify(result["hibp"])]
+        if result["leak_lookup"] is not None:
+            sub_statuses.append(classify(result["leak_lookup"]))
+        else:
+            sub_statuses.append(SKIPPED)
+
+        for level in (OK, RATE_LIMITED, SKIPPED, ERROR):
+            if level in sub_statuses:
+                reason = None
+                if level != OK:
+                    reason = self._aggregate_reason(level, result)
+                annotate(result, level, reason)
+                break
+
         return result
+
+    @staticmethod
+    def _aggregate_reason(level: str, result: Dict[str, Any]) -> Optional[str]:
+        from modules.module_status import reason_for
+        for sub in (result.get("hibp"), result.get("leak_lookup")):
+            if isinstance(sub, dict) and classify(sub) == level:
+                return reason_for(sub)
+        if level == SKIPPED:
+            return "No breach API key configured (HIBP / LEAK_LOOKUP_API_KEY)"
+        return None
 
     def print_result(self, result: Dict, check_type: str = "email"):
         print(f"\n{Colors.CYAN}{'='*60}{Colors.RESET}")
         print(f"{Colors.BOLD}Leak/Breach Check Results{Colors.RESET}")
         print(f"{Colors.CYAN}{'='*60}{Colors.RESET}")
+
+        if print_status_notice(result):
+            return
 
         if check_type == "email":
             email = result.get("email", "")

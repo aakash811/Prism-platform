@@ -50,15 +50,18 @@ class TestOnionChecker:
 
 
 class TestCensysLookup:
-    def test_no_credentials_returns_error(self, monkeypatch):
+    def test_no_credentials_returns_skipped(self, monkeypatch):
         monkeypatch.setattr("modules.censys_lookup.CENSYS_API_ID", "")
         monkeypatch.setattr("modules.censys_lookup.CENSYS_API_SECRET", "")
         from modules.censys_lookup import CensysLookup
+        from modules.module_status import classify, SKIPPED
         cl = CensysLookup()
         cl.api_id = ""
         cl.api_secret = ""
         result = cl.search_ip("8.8.8.8")
-        assert "not set" in (result.get("error") or "")
+        assert classify(result) == SKIPPED
+        assert result.get("error") is None
+        assert "API key" in result.get("status_reason", "")
 
     def test_search_ip_success(self, monkeypatch):
         import requests
