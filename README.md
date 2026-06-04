@@ -413,7 +413,7 @@ Do **not** use PRISM for unauthorized data collection, surveillance, or any acti
 
 ## Contributing
 
-Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting a pull request.
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting a pull request!
 For security issues, see [SECURITY.md](SECURITY.md).
 
 ---
