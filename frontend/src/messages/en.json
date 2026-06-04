@@ -12,7 +12,7 @@
     "target": "Target",
     "targetPlaceholder": "domain, IP, email, phone…",
     "scanType": "Scan Type",
-    "modules": "Modules",
+    "modulesTitle": "Modules",
     "runScan": "Run Scan",
     "scanning": "Scanning…",
     "recent": "Recent",

@@ -164,7 +164,7 @@ export function Sidebar({ onScan, onLoadScan, onCompare, isRunning, isOpen, onCl
           onClick={() => setShowModules(v => !v)}
           className="flex items-center justify-between text-[10px] font-semibold text-text-3 uppercase tracking-wider hover:text-text-2 transition-colors"
         >
-          {t('sidebar.modules')} ({modules.length}/{MODULE_MAP[scanType].length})
+          {t('sidebar.modulesTitle')} ({modules.length}/{MODULE_MAP[scanType].length})
           {showModules ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
         </button>
 

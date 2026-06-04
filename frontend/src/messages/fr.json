@@ -12,6 +12,7 @@
     "target": "Cible",
     "targetPlaceholder": "domaine, IP, e-mail, téléphone…",
     "scanType": "Type d'analyse",
+    "modulesTitle": "Modules",
     "modules": {
       "whois": "WHOIS",
       "dns": "DNS",

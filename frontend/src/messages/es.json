@@ -12,6 +12,7 @@
     "target": "Objetivo",
     "targetPlaceholder": "dominio, IP, correo, teléfono…",
     "scanType": "Tipo de escaneo",
+    "modulesTitle": "Módulos",
     "modules": {
       "whois": "WHOIS",
       "dns": "DNS",

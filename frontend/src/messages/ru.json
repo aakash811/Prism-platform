@@ -12,7 +12,7 @@
     "target": "Цель",
     "targetPlaceholder": "домен, IP, почта, телефон…",
     "scanType": "Тип скана",
-    "modules": "Модули",
+    "modulesTitle": "Модули",
     "runScan": "Запустить",
     "scanning": "Сканирую…",
     "recent": "Недавние",
