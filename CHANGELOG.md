@@ -50,8 +50,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [2.2.0] — 2026-05-26
 
 ### Added
-- Multilingual report translation layer via `modules/report_i18n.py` for EN/RU/DE report rendering.
-- New map i18n keys for precision metadata (`precision`, `approximate`) across EN/RU/DE locales.
+- Multilingual report translation layer via `modules/report_i18n.py` for ENG/RUS/DET report rendering.
+- New map i18n keys for precision metadata (`precision`, `approximate`) across ENG/RUS/DET locales.
 
 ### Changed
 - Frontend map rendering switched from single-marker OSM iframe to Leaflet multi-marker rendering in `ScanResults`.
