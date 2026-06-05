@@ -291,6 +291,33 @@ PRISM is configured via environment variables (`.env`). All API keys are optiona
 | `TELEGRAM_BOT_TOKEN`              | Telegram user lookup                 | Free             |
 | `LEAK_LOOKUP_API_KEY`             | Breach database                      | Limited free     |
 
+### Variables
+
+| Variable             | What it enables                                   | Required? | Where to Get               |
+| :--------------------| :------------------------------------------------ | :-------- | :------------------------- |
+| `API_KEY`            |  Secures your API endoints                        | Yes  | Generate your own secure string |
+| `API_KEYS`           |  Allows passing multiple comma-separated API keys | No   | Generate your own secure strings|
+| `ALLOW_ANON_API`     | Allows unauthenticated API requests without a key | No   | Set to true                     |
+| `NUMVERIFY_API_KEY`  | Validates phone numbers                           | No   | Numverify dashboard             |
+| `LEAK_LOOKUP_API_KEY`| Searches Data Breaches for Leaked Credentials     | No   | LeakLookup API dashboard        |
+| `HIBP_API_KEY`       | Checks if Email/Passwords have been compromised   | No   | HIBP Developer Portal           |
+| `IPINFO_API_KEY`     | Fetches geolocation and ASN details for IP addresses| No | IPInfo.io Dashboard             |
+| `VIRUSTOTAL_API_KEY` | Scans file hashes and URLs for malware            | No   | VirusTotal API Dashboard        | 
+| `ABUSEIPDB_API_KEY` |Checks if an IP address has been reported for malicious activity | No | AbuseIPDB Dashboard  |
+| `SHODAN_API_KEY`    |Searches for internet-connected devices and open ports | No | Shodan Developer Dashboard     |
+| `TELEGRAM_BOT_TOKEN`| Sends automated scan alerts and reports directly to a Telegram channel | No | Telegram Botfinder |
+| `CENSYS_API_ID`| Authenticates attack surface and internet-wide scanning queries | No | Censys Search Console |
+| `CENSYS_API_SECRET`| Paired with CENSYS_API_ID for Censys data access | No | Censys Search Console |
+| `ALLOWED_ORIGINS`| Configures CORS settings to restrict which frontend domains can talk to your backend | No | Set to a comma-separated list of domains |
+| `OPENROUTER_API_KEY`| Not currently implemented or used anywhere in the codebase | No | OpenRouter dashboard|
+| `GROQ_API_KEY`     |Not currently implemented or used anywhere in the codebase | No | Groq Console |
+| `MAX_STORED_SCANS`|Not currently implemented or used anywhere in the codebase | No | Set An Integer Value |
+| `DISABLE_DOCS`| Not currently implemented or used anywhere in the codebase | No | Set to True/False |
+| `WEBHOOK_SECRET`| Not currently implemented or used anywhere in the codebase | No | Generate a Placeholder string |
+| `MAX_UPLOAD_MB` |Sets the maximum file size limit for uploads, defaults to 20MB if missing.| No| Set an integer value |
+
+---
+
 > Certificate Transparency, Wayback Machine, DNS, WHOIS, Website Analyzer, Email Reputation, SMTP Verify, Blackbird, Maigret, Email Headers, File Metadata, and **Dark Web Checker** all work **with zero API keys**.
 
 ---
