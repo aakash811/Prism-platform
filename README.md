@@ -305,7 +305,7 @@ PRISM is configured via environment variables (`.env`). All API keys are optiona
 | `VIRUSTOTAL_API_KEY` | Scans file hashes and URLs for malware            | No   | VirusTotal API Dashboard        | 
 | `ABUSEIPDB_API_KEY` |Checks if an IP address has been reported for malicious activity | No | AbuseIPDB Dashboard  |
 | `SHODAN_API_KEY`    |Searches for internet-connected devices and open ports | No | Shodan Developer Dashboard     |
-| `TELEGRAM_BOT_TOKEN`| Sends automated scan alerts and reports directly to a Telegram channel | No | Telegram Botfinder |
+| `TELEGRAM_BOT_TOKEN`| Sends automated scan alerts and reports directly to a Telegram channel | No | Telegram BotFather |
 | `CENSYS_API_ID`| Authenticates attack surface and internet-wide scanning queries | No | Censys Search Console |
 | `CENSYS_API_SECRET`| Paired with CENSYS_API_ID for Censys data access | No | Censys Search Console |
 | `ALLOWED_ORIGINS`| Configures CORS settings to restrict which frontend domains can talk to your backend | No | Set to a comma-separated list of domains |
