@@ -24,26 +24,13 @@ Scan any domain, IP, email, phone, or username — get WHOIS, DNS, threat intel,
 
 > If you find PRISM useful, please consider giving it a ⭐ — it helps others discover the project and motivates further development.
 
-## Table of Contents
+<div align="center">
 
-- [Why PRISM?](#why-prism)
-- [Overview](#overview)
-- [Why PRISM vs alternatives?](#why-prism-vs-alternatives)
-- [Use cases](#use-cases)
-- [Features](#features)
-- [Showcase](#showcase)
-- [Quick Start](#quick-start)
-- [Configuration](#configuration)
-- [API](#api)
-- [Project Structure](#project-structure)
-- [Running Tests](#running-tests)
-- [CI/CD](#cicd)
-- [Roadmap](#roadmap)
-- [Star History](#star-history)
-- [Legal Notice](#legal-notice)
-- [Support the project](#support-the-project)
-- [Contributing](#contributing)
-- [License](#license)
+### Table of Contents
+
+[Why PRISM?](#why-prism) • [Overview](#overview) • [Why PRISM vs alternatives?](#why-prism-vs-alternatives) • [Use cases](#use-cases) • [Features](#features) • [Showcase](#showcase) • [Quick Start](#quick-start) • [Configuration](#configuration) • [API](#api) • [Project Structure](#project-structure) • [Running Tests](#running-tests) • [CI/CD](#cicd) • [Roadmap](#roadmap) • [Star History](#star-history) • [Legal Notice](#legal-notice) • [Support the project](#support-the-project) • [Contributing](#contributing) • [License](#license)
+
+</div>
 
 <p align="center">
   <img src="docs/gifs/main.gif" alt="PRISM Boot Animation" width="720" />
