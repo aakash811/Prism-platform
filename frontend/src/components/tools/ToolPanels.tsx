@@ -298,6 +298,65 @@ function MacPanel() {
   );
 }
 
+function HashPanel() {
+  const { t } = useTranslations();
+  const [hash, setHash] = useState('');
+  const [error, setError] = useState('');
+  const [result, setResult] = useState<{ type: string; length: number } | null>(null);
+
+  const identifyHash = (value: string) => {
+    const trimmed = value.trim().toLowerCase();
+    setHash(value);
+    setError('');
+    setResult(null);
+
+    if (!trimmed) return;
+
+    // Check if it's valid hex
+    if (!/^[a-f0-9]*$/.test(trimmed)) {
+      setError(t('toolPanels.hash.invalidHex'));
+      return;
+    }
+
+    const len = trimmed.length;
+    let type = 'Unknown';
+
+    if (len === 32) type = 'MD5 / MD4 / NTLM';
+    else if (len === 40) type = 'SHA-1 / LM';
+    else if (len === 64) type = 'SHA-256 / BLAKE2b-256';
+    else if (len === 128) type = 'SHA-512 / BLAKE2b-512';
+    else {
+      setError(t('toolPanels.hash.unsupportedLength'));
+      return;
+    }
+
+    setResult({ type, length: len });
+  };
+
+  return (
+    <div>
+      <Card title={t('toolPanels.hash.title')}>
+        <div className="flex flex-col gap-2">
+          <textarea
+            value={hash}
+            onChange={e => identifyHash(e.target.value)}
+            placeholder={t('toolPanels.hash.placeholder')}
+            className="input-field font-mono text-[11px] resize-y leading-relaxed w-full"
+            rows={6}
+          />
+          {error && <span className="text-[11px] text-red">{error}</span>}
+        </div>
+      </Card>
+      {result && (
+        <Card>
+          <Row label={t('toolPanels.hash.detected')} value={result.type} />
+          <Row label={t('toolPanels.hash.length')} value={result.length} />
+        </Card>
+      )}
+    </div>
+  );
+}
+
 function HeadersPanel() {
   const { t } = useTranslations();
   const [text, setText] = useState('');
@@ -519,7 +578,7 @@ function SubnetPanel() {
 const TOOL_TITLES: Record<string, string> = {
   crypto: 'Crypto Address Lookup', qr: 'QR Code Decoder',
   metadata: 'File Metadata & GEOINT', headers: 'Email Header Analyzer', mac: 'MAC Lookup',
-  subnet: 'IP / Subnet Calculator',
+  subnet: 'IP / Subnet Calculator', hash: 'Hash Identifier',
 };
 
 interface Props {
@@ -546,8 +605,9 @@ export function ToolPanels({ mode, onBack }: Props) {
       {activePanel === 'qr' && <QrPanel />}
       {activePanel === 'metadata' && <MetadataPanel />}
       {activePanel === 'headers' && <HeadersPanel />}
-      {activePanel === 'subnet' && <SubnetPanel />} 
+      {activePanel === 'subnet' && <SubnetPanel />}
       {activePanel === 'mac' && <MacPanel />}
+      {activePanel === 'hash' && <HashPanel />}
     </div>
   );
 }

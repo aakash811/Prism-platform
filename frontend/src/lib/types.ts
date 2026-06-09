@@ -1,6 +1,6 @@
 export type ScanType = 'domain' | 'ip' | 'email' | 'phone' | 'username';
 export type ScanStatus = 'idle' | 'running' | 'completed' | 'failed';
-export type ToolMode = 'metadata' | 'headers' | 'crypto' | 'qr' | 'mac' | 'subnet' | null;
+export type ToolMode = 'metadata' | 'headers' | 'crypto' | 'qr' | 'mac' | 'subnet' | 'hash' | null;
 
 /** Standard per-module result status (mirrors modules/module_status.py). */
 export type ModuleStatus = 'ok' | 'skipped' | 'rate_limited' | 'error';
