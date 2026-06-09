@@ -1,11 +1,11 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { FileText, Mail, Bitcoin, QrCode, ChevronRight, Globe, User, Phone, Shield, Database, Zap, Eye, Activity, Network } from 'lucide-react';
+import { FileText, Mail, Bitcoin, QrCode, ChevronRight, Globe, User, Phone, Shield, Database, Zap, Eye, Activity, Network, Hash } from 'lucide-react';
 import { useTranslations } from '@/lib/i18n';
 import { Logo } from '../Logo';
 import type { ToolMode } from '@/lib/types';
 
-const TOOL_IDS = ['metadata', 'headers', 'crypto', 'qr', 'mac', 'subnet'] as const;
+const TOOL_IDS = ['metadata', 'headers', 'crypto', 'qr', 'mac', 'subnet', 'hash'] as const;
 type ToolId = typeof TOOL_IDS[number];
 
 const ICONS: Record<ToolId, React.ElementType> = {
@@ -15,6 +15,7 @@ const ICONS: Record<ToolId, React.ElementType> = {
   crypto: Bitcoin,
   qr: QrCode,
   mac: Network,
+  hash: Hash,
 };
 
 const CAPS_KEYS = ['domain', 'email', 'phone', 'username'] as const;

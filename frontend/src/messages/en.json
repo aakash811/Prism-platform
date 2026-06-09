@@ -80,7 +80,8 @@
       "crypto":   { "label": "Crypto Address", "desc": "Bitcoin & Ethereum" },
       "qr":       { "label": "QR Decode",       "desc": "Decode & analyze" },
       "mac":      { "label": "MAC Lookup",      "desc": "Vendor lookup" },
-      "subnet":   { "label": "IP / Subnet",     "desc": "Network ranges & CIDR" }
+      "subnet":   { "label": "IP / Subnet",     "desc": "Network ranges & CIDR" },
+      "hash":     { "label": "Hash Identifier", "desc": "Identify hash types" }
     },
     "demo": {
       "line1": "This is a public demo with limited API quotas. Some modules (Shodan, VirusTotal) may be rate-limited.",
@@ -166,6 +167,14 @@
       "country": "Country",
       "org": "Org",
       "spoofingIndicators": "⚠ Spoofing Indicators"
+    },
+    "hash": {
+      "title": "Hash Identifier",
+      "placeholder": "Paste hash (MD5, SHA-1, SHA-256, SHA-512)…",
+      "detected": "Detected Type",
+      "length": "Length",
+      "invalidHex": "Invalid hex characters. Hashes contain only 0-9 and a-f.",
+      "unsupportedLength": "Unsupported hash length. Expected: 32 (MD5), 40 (SHA-1), 64 (SHA-256), or 128 (SHA-512) chars."
     }
   },
   "progress": {
