@@ -232,14 +232,16 @@
       "city": "Ville",
       "country": "Pays",
       "org": "Organisation",
-      "spoofingIndicators": "⚠ Indicateurs d'usurpation"    },
+      "spoofingIndicators": "⚠ Indicateurs d'usurpation"
+    },
     "hash": {
       "title": "Identificateur de Hash",
       "placeholder": "Coller un hash (MD5, SHA-1, SHA-256, SHA-512)…",
       "detected": "Type Détecté",
       "length": "Longueur",
       "invalidHex": "Caractères hexadécimaux invalides. Les hashes ne contiennent que 0-9 et a-f.",
-      "unsupportedLength": "Longueur de hash non supportée. Attendu : 32 (MD5), 40 (SHA-1), 64 (SHA-256) ou 128 (SHA-512) caractères."    }
+      "unsupportedLength": "Longueur de hash non supportée. Attendu : 32 (MD5), 40 (SHA-1), 64 (SHA-256) ou 128 (SHA-512) caractères."
+    }
   },
   "common": {
     "copy": "Copier",

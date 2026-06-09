@@ -199,14 +199,16 @@
       "city": "Ciudad",
       "country": "País",
       "org": "Organización",
-      "spoofingIndicators": "⚠ Indicadores de suplantación"    },
+      "spoofingIndicators": "⚠ Indicadores de suplantación"
+    },
     "hash": {
       "title": "Identificador de Hash",
       "placeholder": "Pegar hash (MD5, SHA-1, SHA-256, SHA-512)…",
       "detected": "Tipo Detectado",
       "length": "Longitud",
       "invalidHex": "Caracteres hexadecimales inválidos. Los hashes contienen solo 0-9 y a-f.",
-      "unsupportedLength": "Longitud de hash no soportada. Esperado: 32 (MD5), 40 (SHA-1), 64 (SHA-256) o 128 (SHA-512) caracteres."    }
+      "unsupportedLength": "Longitud de hash no soportada. Esperado: 32 (MD5), 40 (SHA-1), 64 (SHA-256) o 128 (SHA-512) caracteres."
+    }
   },
   "common": { "copy": "Copiar", "copied": "¡Copiado!", "copyFailed": "Error al copiar", "loading": "Cargando…", "error": "Error", "backToTop": "Volver arriba" },
   "lang": { "label": "Idioma", "en": "EN", "ru": "RU", "de": "DE", "fr": "FR", "es": "ES" }
