@@ -112,6 +112,20 @@ export async function listScans(): Promise<ScanListItem[]> {
   return r.json();
 }
 
+export async function clearScans(): Promise<{ deleted: number }> {
+  const r = await fetch(`${API}/api/scans`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  });
+
+  if (!r.ok) {
+    throw new Error('Failed to clear scan history');
+  }
+
+  return r.json();
+}
+
+
 export async function fetchReportBlob(scanId: string, format: 'html' | 'pdf', lang?: string): Promise<Blob> {
   const suffix = format === 'pdf' ? '/pdf' : '';
   const q = lang ? `?lang=${encodeURIComponent(lang)}` : '';
