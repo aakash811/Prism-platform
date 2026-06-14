@@ -1099,6 +1099,45 @@ async def list_scans(request: Request):
         for s in all_scans
     ]
 
+@app.delete("/api/scans", dependencies=[Depends(require_api_key)])
+@limiter.limit("10/minute")
+async def clear_scans(request: Request):
+    principal = get_principal(request)
+    deleted = 0
+
+    try:
+        for fname in os.listdir(_SCANS_DIR):
+            if not fname.endswith(".json"):
+                continue
+
+            path = os.path.join(_SCANS_DIR, fname)
+
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    scan = json.load(f)
+            except Exception:
+                continue
+
+            if (scan.get("owner") or ANONYMOUS_PRINCIPAL) != principal:
+                continue
+
+            try:
+                os.remove(path)
+                deleted += 1
+            except Exception:
+                pass
+
+        return {"deleted": deleted}
+
+    except Exception as e:
+        return JSONResponse(
+            {"error": str(e)},
+            status_code=500
+        )
+
+
+
+
 @app.websocket("/ws/{scan_id}")
 async def websocket_endpoint(websocket: WebSocket, scan_id: str):
     try:

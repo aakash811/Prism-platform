@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Play, Loader2, ChevronDown, ChevronUp, Lightbulb, RotateCcw, Trash2, History, GitCompare } from 'lucide-react';
 import { useTranslations } from '@/lib/i18n';
-import { listScans, type ScanListItem } from '@/lib/api';
+import { listScans, clearScans, type ScanListItem } from '@/lib/api';
 import type { ScanType } from '@/lib/types';
 
 const TYPE_COLOR: Record<ScanType, string> = {
@@ -88,6 +88,22 @@ export function Sidebar({ onScan, onLoadScan, onCompare, isRunning, isOpen, onCl
     }
     setHistoryLoading(false);
   };
+
+  const handleClearHistory = async () => {
+  const confirmed = window.confirm(
+    'Are you sure you want to clear your scan history?'
+  );
+
+  if (!confirmed) return;
+
+  try {
+    await clearScans();
+    await fetchHistory();
+  } catch (err) {
+    console.error(err);
+    alert('Failed to clear scan history');
+  }
+};
 
   const toggleHistory = () => {
     const next = !showHistory;
@@ -258,6 +274,10 @@ export function Sidebar({ onScan, onLoadScan, onCompare, isRunning, isOpen, onCl
                 <GitCompare size={10} /> {t('sidebar.compareSelected')}
               </button>
             )}
+
+
+
+
             <div className="flex items-center gap-1 mb-1.5">
               <button
                 onClick={() => { setCompareMode(v => !v); setCompareSelection([]); }}
@@ -265,12 +285,28 @@ export function Sidebar({ onScan, onLoadScan, onCompare, isRunning, isOpen, onCl
                   compareMode ? 'bg-purple/20 text-purple border border-purple/30' : 'bg-surface-3 text-text-3 border border-border-1 hover:text-text-2'
                 }`}
               >
+                
                 <span className="flex items-center gap-1"><GitCompare size={8} /> {t('sidebar.compare')}</span>
               </button>
+
+  <button
+    onClick={handleClearHistory}
+    className="text-text-3 hover:text-red transition-colors"
+  >
+    <Trash2 size={10} />
+  </button>
+
+
               <button onClick={fetchHistory} className="text-text-3 hover:text-text-2 transition-colors ml-auto">
                 <RotateCcw size={10} className={historyLoading ? 'spin' : ''} />
               </button>
             </div>
+
+
+
+
+
+
             {historyLoading ? (
               <div className="flex justify-center py-2"><Loader2 size={14} className="spin text-text-3" /></div>
             ) : history.length === 0 ? (
