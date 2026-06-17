@@ -469,13 +469,22 @@ GitHub Actions pipeline (`.github/workflows/ci.yml`):
 - [x] One-command demo (`docker compose -f docker-compose.demo.yml up`) with seeded scans
 - [x] Reliable Leaflet map rendering + Unicode (Cyrillic) fonts in PDF export
 
-### v2.4 — planned
-- [ ] Scheduled scans + diff alerting via webhooks
-- [ ] Browser extension for one-click scans
-- [ ] Per-API-key quotas and usage stats endpoint
-- [ ] GitHub user / organization recon module
+### v2.4 — released
+- [x] GitHub user / organization recon module (profile, languages, repos, commit-metadata emails)
+- [x] Hash Identifier and Base64 / URL encoder standalone tools
+- [x] Per-module refresh — re-run a single module from its result card
+- [x] Approximate region-level GeoIP map for phone scans
+- [x] Scan history — sorted newest-first, auto-refresh, "Clear history", localized
+- [x] Friendly empty states (graph tab) and more rotating sidebar tips
+- [x] Hardening — Unicode (DejaVu) fonts in PDF, robust startup env parsing, apt-retry Docker builds
+
+### v2.5 — planned
+- [ ] Scheduled scans + continuous monitoring / watchlists with diff alerting
 - [ ] Entity graph export to GEXF / GraphML (Gephi / Maltego)
-- [ ] Additional locales (ZH and community-contributed) + dark/light theme toggle
+- [ ] Per-API-key quotas and usage-stats endpoint
+- [ ] Browser extension for one-click scans
+- [ ] Additional locales (ZH) + dark / light theme toggle
+- [ ] *(exploring)* AI OSINT agent — autonomous multi-module investigation
 
 > Want to contribute? Pick an open issue tagged `good first issue` or open a new one.
 

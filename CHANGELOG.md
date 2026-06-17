@@ -8,20 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+_Nothing yet — see the [Roadmap](README.md#roadmap) for what's planned in v2.5._
+
+---
+
+## [2.4.0] — 2026-06-17
+
 ### Added
 - **GitHub user/organization recon module** — given a username it returns the public profile, top languages, repo/star counts, and emails leaked in commit metadata; works without a token and degrades to `rate_limited` when the API throttles (#95).
 - **Base64 & URL encoder/decoder** standalone tool.
 - More rotating sidebar tips, localized across all five languages (#74).
-
-### Changed
-- The Graph tab shows a clear, localized empty state instead of a blank area (#77).
-- The Dockerfile retries `apt-get` downloads (`Acquire::Retries`), making builds more robust on flaky networks (#121).
-
----
-
-## [2.4.0] — 2026-06-13
-
-### Added
 - **Graceful degradation for key-dependent modules** — a standard status enum (`ok` / `skipped` / `rate_limited` / `error`) in `modules/module_status.py`; Shodan, VirusTotal, AbuseIPDB, Censys, Leak-Lookup/HIBP and Telegram now report `skipped` when an API key is absent and `rate_limited` on HTTP 429 instead of failing, with per-module status badges in the dashboard (#61).
 - **`HIBP_API_KEY` config option** — the HIBP breach lookup reads a real key and skips up-front when it is absent, instead of always hitting an unauthenticated 401 (#61).
 - **One-command demo** — `docker compose -f docker-compose.demo.yml up` boots PRISM with preloaded sample scans, no API keys required (#63).
@@ -37,6 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - The scan engine caches only genuinely successful (`ok`) results, so a missing key is not frozen in cache once configured (#61).
 - The Censys tab is hidden when the module is skipped (no API key) instead of showing an empty card.
 - Removed the default Leaflet attribution flag from all maps.
+- The Graph tab shows a clear, localized empty state instead of a blank area (#77).
+- The Dockerfile retries `apt-get` downloads (`Acquire::Retries`), making builds more robust on flaky networks (#121).
 
 ### Fixed
 - **PDF reports rendered non-Latin text (e.g. Cyrillic) as empty grey boxes** — bundled DejaVu fonts now render Unicode correctly.
