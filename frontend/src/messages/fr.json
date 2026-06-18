@@ -85,7 +85,8 @@
       "mac":      { "label": "Recherche MAC",          "desc": "Recherche de fournisseur" },
       "subnet":   { "label": "IP / Sous-réseau", "desc": "Plages réseau & CIDR" },
       "hash":     { "label": "Identificateur de Hash",  "desc": "Identifier les types de hash" },
-      "encoder":  { "label": "Base64 / URL", "desc": "Encoder et décoder" }
+      "encoder":  { "label": "Base64 / URL", "desc": "Encoder et décoder" },
+      "jwt":      { "label": "Décodeur JWT", "desc": "Décoder les jetons JWT" }
     },
     "demo": {
       "line1": "Ceci est une démo publique avec des quotas API limités. Certains modules (Shodan, VirusTotal) peuvent être soumis à des limites de débit.",
@@ -253,6 +254,19 @@
       "decode": "Décoder",
       "output": "Résultat",
       "invalid": "Entrée invalide pour le mode sélectionné."
+    },
+    "jwt": {
+      "title": "Décodeur JWT",
+      "placeholder": "Collez un jeton JWT (eyJ...)…",
+      "decode": "Décoder",
+      "header": "En-tête",
+      "payload": "Charge utile",
+      "issuedAt": "Émis le",
+      "expiresAt": "Expire le",
+      "notBefore": "Valide à partir de",
+      "expired": "⚠ Jeton expiré",
+      "noSignatureWarning": "La signature n'est pas vérifiée — cet outil ne fait que décoder.",
+      "invalid": "Format JWT invalide. Trois parties séparées par des points attendues : header.payload.signature"
     }
   },
   "common": {

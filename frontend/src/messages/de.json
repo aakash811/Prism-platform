@@ -85,7 +85,8 @@
       "mac":      { "label": "MAC Lookup",        "desc": "Hersteller-Suche" },
       "subnet":   { "label": "IP / Subnetz",    "desc": "Netzwerkbereiche & CIDR" },
       "hash":     { "label": "Hash-Identifier",   "desc": "Hash-Typen identifizieren" },
-      "encoder":  { "label": "Base64 / URL", "desc": "Kodieren & Dekodieren" }
+      "encoder":  { "label": "Base64 / URL", "desc": "Kodieren & Dekodieren" },
+      "jwt":      { "label": "JWT-Decoder", "desc": "JWT-Tokens dekodieren" }
     },
     "demo": {
       "line1": "Dies ist eine öffentliche Demo mit begrenzten API-Kontingenten. Manche Module (Shodan, VirusTotal) können ratenbegrenzt sein.",
@@ -187,6 +188,19 @@
       "decode": "Dekodieren",
       "output": "Ausgabe",
       "invalid": "Ungültige Eingabe für den gewählten Modus."
+    },
+    "jwt": {
+      "title": "JWT-Decoder",
+      "placeholder": "JWT-Token einfügen (eyJ...)…",
+      "decode": "Dekodieren",
+      "header": "Header",
+      "payload": "Payload",
+      "issuedAt": "Ausgestellt am",
+      "expiresAt": "Läuft ab am",
+      "notBefore": "Nicht vor",
+      "expired": "⚠ Token abgelaufen",
+      "noSignatureWarning": "Die Signatur wird nicht überprüft — dieses Tool dekodiert nur.",
+      "invalid": "Ungültiges JWT-Format. Erwartet werden drei durch Punkte getrennte Teile: header.payload.signature"
     }
   },
   "progress": {

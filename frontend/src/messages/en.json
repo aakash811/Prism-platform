@@ -191,16 +191,16 @@
     },
     "jwt": {
       "title": "JWT Decoder",
-      "placeholder": "Paste a JWT token(eyj...)...",
+      "placeholder": "Paste a JWT token (eyJ...)…",
       "decode": "Decode",
       "header": "Header",
-      "playload": "Payload",
+      "payload": "Payload",
       "issuedAt": "Issued At",
       "expiresAt": "Expires At",
       "notBefore": "Not before",
       "expired": "⚠ Token expired",
-      "noSignatureWarning": "Signature is not verified - this tool only decodes.",
-      "invalid": "Invalid JWT format. Expected tthree dot-seperated parts: header.playload.signature"
+      "noSignatureWarning": "Signature is not verified — this tool only decodes.",
+      "invalid": "Invalid JWT format. Expected three dot-separated parts: header.payload.signature"
     }
   },
   "progress": {
