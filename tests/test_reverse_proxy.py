@@ -32,8 +32,22 @@ def _load_app(monkeypatch, **env):
     return importlib.import_module("web.app")
 
 
+def _with_peer(app, peer=("testclient", 50000)):
+    """Wrap an ASGI app so the simulated client peer is deterministic.
+
+    Starlette's TestClient leaves ``scope["client"]`` unset, which makes the
+    proxy-header tests non-deterministic; this pins it.
+    """
+    async def wrapped(scope, receive, send):
+        if scope.get("type") == "http":
+            scope = {**scope, "client": tuple(peer)}
+        await app(scope, receive, send)
+
+    return wrapped
+
+
 def _get(app, path, headers=None):
-    with TestClient(app) as client:
+    with TestClient(_with_peer(app)) as client:
         return client.get(path, headers=headers or {})
 
 
@@ -103,7 +117,7 @@ def test_serves_next_index_with_runtime_config(monkeypatch, tmp_path):
 
     assert response.status_code == 200
     assert "PRISM Next" in text
-    assert 'window.__PRISM_CONFIG__={"apiUrl":"https://api.example.com","apiKey":"public-browser-key","basePath":"/prism"}' in text
+    assert 'window.__PRISM_CONFIG__={"apiUrl":"https://api.example.com","apiKey":"public-browser-key","basePath":"/prism","demoMode":false}' in text
 
 
 def test_serves_next_static_asset(monkeypatch, tmp_path):
