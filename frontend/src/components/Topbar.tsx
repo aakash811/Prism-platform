@@ -42,7 +42,7 @@ export function Topbar({ status, onHome, onMenuToggle }: Props) {
 
       <button onClick={onHome} className="flex items-center gap-2.5 cursor-pointer group shrink-0">
         <Logo size={26} />
-        <span className="font-bold text-[15px] tracking-tight text-text-1 group-hover:text-white transition-colors">
+        <span className="font-brand text-[15px] tracking-tight text-text-1 group-hover:text-white transition-colors">
           PRISM
         </span>
         <span
