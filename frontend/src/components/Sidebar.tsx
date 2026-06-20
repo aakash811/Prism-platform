@@ -17,7 +17,7 @@ interface RecentScan { target: string; type: ScanType; ts: number; }
 
 const SCAN_TYPES: ScanType[] = ['domain', 'ip', 'email', 'phone', 'username'];
 
-const MODULE_MAP: Record<ScanType, string[]> = {
+export const MODULE_MAP: Record<ScanType, string[]> = {
   domain:   ['whois', 'dns', 'geoip', 'cert_transparency', 'website', 'wayback', 'shodan', 'virustotal', 'censys', 'onion'],
   ip:       ['geoip', 'shodan', 'virustotal', 'abuseipdb', 'censys'],
   email:    ['emailrep', 'smtp', 'leaks'],

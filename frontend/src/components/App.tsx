@@ -225,7 +225,7 @@ export function App() {
         {sidebarOpen && <div onClick={() => setSidebarOpen(false)} className="fixed inset-0 bg-black/50 z-40 md:hidden" />}
         <Sidebar onScan={handleScan} onLoadScan={handleLoadScan} onCompare={handleCompare} isRunning={scanStatus === 'running'} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         <main className="flex-1 min-w-0 relative z-10">
-          {view === 'idle' && <IdleView onTool={handleTool} />}
+          {view === 'idle' && <IdleView onTool={handleTool} onScan={handleScan} />}
           {view === 'tool' && toolMode && (
             <ToolPanels mode={toolMode} onBack={() => setView('idle')} />
           )}

@@ -1,10 +1,21 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { FileText, Mail, Bitcoin, QrCode, ChevronRight, Globe, User, Phone, Shield, Database, Zap, Eye, Activity, Network, Hash, Binary, KeyRound } from 'lucide-react';
+import { FileText, Mail, Bitcoin, QrCode, ChevronRight, Globe, User, Phone, Shield, Database, Zap, Eye, Activity, Network, Hash, Binary, KeyRound, Search } from 'lucide-react';
 import { useTranslations } from '@/lib/i18n';
 import { getPrismDemoMode } from '@/lib/prism-config';
 import { Logo } from '../Logo';
-import type { ToolMode } from '@/lib/types';
+import { MODULE_MAP } from '../Sidebar';
+import type { ToolMode, ScanType } from '@/lib/types';
+
+function detectScanType(value: string): ScanType {
+  const s = value.trim();
+  if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s)) return 'email';
+  if (/^(\d{1,3}\.){3}\d{1,3}$/.test(s) || /^[0-9a-fA-F:]+:[0-9a-fA-F:]+$/.test(s)) return 'ip';
+  if (/^\+?[\d][\d\s().-]{6,}$/.test(s)) return 'phone';
+  if (s.startsWith('@')) return 'username';
+  if (s.includes('.') && !/\s/.test(s)) return 'domain';
+  return 'username';
+}
 
 const TOOL_IDS = ['metadata', 'headers', 'crypto', 'qr', 'mac', 'subnet', 'hash', 'encoder', 'jwt'] as const;
 type ToolId = typeof TOOL_IDS[number];
@@ -24,15 +35,27 @@ const ICONS: Record<ToolId, React.ElementType> = {
 const CAPS_KEYS = ['domain', 'email', 'phone', 'username'] as const;
 type CapsKey = typeof CAPS_KEYS[number];
 
-interface Props { onTool: (mode: ToolMode) => void; }
+interface Props {
+  onTool: (mode: ToolMode) => void;
+  onScan: (target: string, type: ScanType, modules: string[]) => void;
+}
 
-export function IdleView({ onTool }: Props) {
+export function IdleView({ onTool, onScan }: Props) {
   const { t } = useTranslations();
   const demoMode = getPrismDemoMode();
   const [targetIdx, setTargetIdx] = useState(0);
   const [displayed, setDisplayed] = useState('');
   const [deleting, setDeleting] = useState(false);
   const [counters, setCounters] = useState([0, 0, 0, 0]);
+  const [query, setQuery] = useState('');
+
+  const runQuickScan = (e: React.FormEvent) => {
+    e.preventDefault();
+    const target = query.trim();
+    if (!target) return;
+    const type = detectScanType(target);
+    onScan(target, type, MODULE_MAP[type]);
+  };
 
   const statValues = [22, 12, 5, 0];
   const TARGETS = ['domain.com', '192.168.1.1', 'user@example.com', '@username', '+1 555 000 0000'];
@@ -78,11 +101,31 @@ export function IdleView({ onTool }: Props) {
       <h1 className="text-xl font-bold tracking-widest text-text-1 mb-1">{t('idle.title')}</h1>
       <div className="text-[10px] text-text-2 uppercase tracking-widest mb-5">{t('idle.subtitle')}</div>
 
-      <div className="flex items-center gap-2 mb-7 font-mono text-[12px] px-4 py-2 rounded border border-border-1 bg-surface-2">
-        <span className="text-text-3">target://</span>
-        <span className="text-blue min-w-[140px]">{displayed}</span>
-        <span className="text-blue opacity-80" style={{ animation: 'cursor-blink 0.8s step-end infinite' }}>▌</span>
-      </div>
+      <form onSubmit={runQuickScan} className="flex items-center gap-2 mb-7 w-full max-w-md">
+        <div className="flex items-center gap-2 flex-1 min-w-0 font-mono text-[13px] px-4 py-2.5 rounded border border-border-1 bg-surface-2 transition-colors focus-within:border-blue">
+          <span className="text-text-3 shrink-0">target://</span>
+          <input
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder={displayed}
+            aria-label={t('idle.title')}
+            autoCapitalize="off"
+            autoCorrect="off"
+            autoComplete="off"
+            spellCheck={false}
+            enterKeyHint="search"
+            className="flex-1 min-w-0 bg-transparent outline-none text-blue placeholder:text-text-3"
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={!query.trim()}
+          className="btn-primary h-[42px] px-4 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+          aria-label={t('sidebar.runScan')}
+        >
+          <Search size={15} />
+        </button>
+      </form>
 
       <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-8">
         {[

@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 - **Readability** — the UI now uses the Inter sans-serif font instead of the Silkscreen pixel font (kept only for the PRISM logo wordmark), and the low-contrast dark-theme secondary text color was raised to meet readable contrast for field labels, inactive tabs, and placeholders (#130).
 
+### Fixed
+- **Mobile: the target field couldn't be used** — the landing screen's `target://` box was a decorative element, not a real input, so tapping it never brought up the keyboard (especially on iOS). It is now a real input that auto-detects the target type and starts a scan directly from the home screen.
+
 ---
 
 ## [2.4.0] — 2026-06-17
