@@ -91,19 +91,17 @@ class Blackbird:
             async with session.get(url, allow_redirects=True) as response:
                 response_time = asyncio.get_event_loop().time() - start_time
                 http_code = response.status
+                final_url = str(response.url).lower()
+                redirected_away = bool(response.history) and username.lower() not in final_url
 
-                if error_type == "status":
-                    if http_code == error_indicator or http_code >= 400:
-                        status = "not_found"
-                    else:
-                        status = "found"
+                if http_code != 200 or redirected_away:
+                    status = "not_found"
+                elif error_type == "status":
+                    status = "found"
                 else:
                     try:
                         text = await response.text()
-                        if error_indicator.lower() in text.lower():
-                            status = "not_found"
-                        else:
-                            status = "found" if http_code == 200 else "not_found"
+                        status = "not_found" if error_indicator.lower() in text.lower() else "found"
                     except:
                         status = "error"
 
