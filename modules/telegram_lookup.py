@@ -50,36 +50,36 @@ class TelegramLookup:
             og_desc  = re.search(r'<meta property="og:description" content="([^"]+)"', html)
             og_image = re.search(r'<meta property="og:image" content="([^"]+)"', html)
 
-            if og_title:
-                result["name"] = og_title.group(1).strip()
+            title = og_title.group(1).strip() if og_title else ""
+            has_profile = '"tgme_page_title"' in html or 'tgme_page_extra' in html or 'tgme_page_photo' in html
+
+            if title and title.lower() != "telegram" and has_profile:
                 result["found"] = True
+                result["name"] = title
 
-            if og_desc:
-                desc = og_desc.group(1).strip()
-                sub_match = re.search(r'([\d\s,]+)\s+(?:subscribers|members|followers)', desc, re.IGNORECASE)
-                if sub_match:
-                    result["subscribers"] = sub_match.group(0).strip()
-                result["bio"] = desc
+                if og_desc:
+                    desc = og_desc.group(1).strip()
+                    sub_match = re.search(r'([\d\s,]+)\s+(?:subscribers|members|followers)', desc, re.IGNORECASE)
+                    if sub_match:
+                        result["subscribers"] = sub_match.group(0).strip()
+                    result["bio"] = desc
 
-            if og_image:
-                result["photo_url"] = og_image.group(1)
+                if og_image:
+                    result["photo_url"] = og_image.group(1)
 
-            if '"tgme_page_extra"' in html or 'subscribers' in html.lower():
-                result["entity_type"] = "channel" if "subscribers" in html.lower() else "group"
-            elif 'tgme_page_context_link' in html:
-                result["entity_type"] = "user"
-            else:
-                result["entity_type"] = "user"
+                if 'tgme_page_extra' in html or 'subscribers' in html.lower():
+                    result["entity_type"] = "channel" if "subscribers" in html.lower() else "group"
+                elif 'tgme_page_context_link' in html:
+                    result["entity_type"] = "user"
+                else:
+                    result["entity_type"] = "user"
 
-            if "tgme_page_verified" in html or '"verified"' in html.lower():
-                result["verified"] = True
+                if "tgme_page_verified" in html:
+                    result["verified"] = True
 
-            if "This account is private" in html or "tgme_page_joined" not in html and result["entity_type"] == "user":
-                result["is_private"] = True
-
-            subs_match = re.search(r'<div class="tgme_page_extra">([^<]+)</div>', html)
-            if subs_match:
-                result["subscribers"] = subs_match.group(1).strip()
+                subs_match = re.search(r'<div class="tgme_page_extra">([^<]+)</div>', html)
+                if subs_match:
+                    result["subscribers"] = subs_match.group(1).strip()
 
             result["status"] = OK
 

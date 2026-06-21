@@ -1,18 +1,40 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Set
 
 import requests
 
 
 _ONION_RE = re.compile(r"https?://[a-z2-7]{16,56}\.onion[/\w\-\.]*", re.IGNORECASE)
+_TAG_RE = re.compile(r"<[^>]+>")
+_WS_RE = re.compile(r"\s+")
 
 
 class OnionChecker:
 
     def __init__(self, timeout: int = 10):
         self.timeout = timeout
+
+    def _tokens(self, target: str) -> Set[str]:
+        t = (target or "").lower().strip()
+        tokens: Set[str] = {t}
+        if "." in t and " " not in t:
+            parts = [p for p in t.split(".") if p]
+            if len(parts) >= 2:
+                tokens.add(parts[-2])
+        for word in re.split(r"[\s@/]+", t):
+            if word:
+                tokens.add(word)
+        return {tok for tok in tokens if len(tok) >= 3}
+
+    def _relevant(self, item: Dict[str, Any], tokens: Set[str]) -> bool:
+        if not tokens:
+            return False
+        hay = " ".join(
+            str(item.get(k) or "") for k in ("url", "title", "description", "snippet")
+        ).lower()
+        return any(tok in hay for tok in tokens)
 
     def _search_ahmia(self, query: str) -> List[Dict[str, Any]]:
         try:
@@ -24,8 +46,20 @@ class OnionChecker:
             )
             if r.status_code != 200:
                 return []
-            urls = sorted(set(_ONION_RE.findall(r.text or "")))
-            return [{"source": "ahmia", "url": u} for u in urls[:25]]
+            html = r.text or ""
+            out: List[Dict[str, Any]] = []
+            seen: Set[str] = set()
+            for block in re.split(r'<li[^>]*class="[^"]*result', html)[1:]:
+                m = _ONION_RE.search(block)
+                if not m:
+                    continue
+                url = m.group(0)
+                if url in seen:
+                    continue
+                seen.add(url)
+                text = _WS_RE.sub(" ", _TAG_RE.sub(" ", block)).strip()
+                out.append({"source": "ahmia", "url": url, "snippet": text[:400] or None})
+            return out[:25]
         except Exception:
             return []
 
@@ -61,16 +95,20 @@ class OnionChecker:
         if not target:
             return {"target": target, "error": "empty target"}
 
+        tokens = self._tokens(target)
         ahmia = self._search_ahmia(target)
         darksearch = self._search_darksearch(target)
 
-        seen = set()
+        seen: Set[str] = set()
         merged: List[Dict[str, Any]] = []
         for item in ahmia + darksearch:
             url = item.get("url", "")
             if not url or url in seen:
                 continue
+            if not self._relevant(item, tokens):
+                continue
             seen.add(url)
+            item.pop("snippet", None)
             merged.append(item)
 
         return {

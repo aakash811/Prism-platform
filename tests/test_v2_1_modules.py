@@ -12,19 +12,20 @@ class TestOnionChecker:
         result = OnionChecker().check("")
         assert result["error"] == "empty target"
 
-    def test_aggregates_unique_results(self, monkeypatch):
+    def test_aggregates_unique_relevant_results(self, monkeypatch):
         from modules.onion_checker import OnionChecker
 
         oc = OnionChecker()
         monkeypatch.setattr(
             oc, "_search_ahmia",
-            lambda q: [{"source": "ahmia", "url": "http://abc.onion"}],
+            lambda q: [{"source": "ahmia", "url": "http://abc.onion", "snippet": "example.com leak dump"}],
         )
         monkeypatch.setattr(
             oc, "_search_darksearch",
             lambda q: [
-                {"source": "darksearch", "url": "http://abc.onion"},
-                {"source": "darksearch", "url": "http://xyz.onion", "title": "x"},
+                {"source": "darksearch", "url": "http://abc.onion", "title": "example mirror"},
+                {"source": "darksearch", "url": "http://xyz.onion", "title": "example dump"},
+                {"source": "darksearch", "url": "http://unrelated.onion", "title": "random market"},
             ],
         )
 
@@ -33,7 +34,8 @@ class TestOnionChecker:
         assert result["total_found"] == 2
         urls = {r["url"] for r in result["results"]}
         assert urls == {"http://abc.onion", "http://xyz.onion"}
-        assert result["sources"] == {"ahmia": 1, "darksearch": 2}
+        assert "http://unrelated.onion" not in urls
+        assert result["sources"] == {"ahmia": 1, "darksearch": 3}
 
     def test_ahmia_network_failure_handled(self, monkeypatch):
         import requests

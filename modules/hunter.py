@@ -1,7 +1,7 @@
 import dns.resolver
 import requests
 import socket
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 import sys
 sys.path.append('..')
 from config import Colors
@@ -61,20 +61,25 @@ class EmailRepLookup:
             pass
         return False
 
-    def _check_smtp_exists(self, email: str, domain: str, mx_host: str) -> bool:
+    def _check_smtp_exists(self, email: str, domain: str, mx_host: str) -> Optional[bool]:
         try:
             with socket.create_connection((mx_host, 25), timeout=8) as sock:
                 sock.recv(1024)
                 sock.sendall(b"EHLO prism.local\r\n")
                 sock.recv(1024)
-                sock.sendall(f"MAIL FROM:<test@prism.local>\r\n".encode())
+                sock.sendall(b"MAIL FROM:<test@prism.local>\r\n")
                 sock.recv(1024)
                 sock.sendall(f"RCPT TO:<{email}>\r\n".encode())
                 resp = sock.recv(1024).decode(errors="ignore")
                 sock.sendall(b"QUIT\r\n")
-                return resp.startswith("250")
+                code = resp[:3]
+                if code.startswith("25"):
+                    return True
+                if code[:1] == "5":
+                    return False
+                return None
         except Exception:
-            return False
+            return None
 
     def lookup(self, email: str) -> Dict[str, Any]:
         result = {

@@ -45,9 +45,9 @@ class CertTransparency:
                 name_value = cert.get("name_value", "")
                 for name in name_value.split("\n"):
                     name = name.strip().lower()
-                    if name and domain in name:
-                        if name.startswith("*."):
-                            name = name[2:]
+                    if name.startswith("*."):
+                        name = name[2:]
+                    if name == domain or name.endswith("." + domain):
                         subdomains.add(name)
 
                 issuer_raw = cert.get("issuer_name", "")
