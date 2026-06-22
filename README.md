@@ -66,7 +66,7 @@ PRISM aggregates data from **20+ external intelligence sources** to build a comp
 - **Frontend** — Next.js 14 (App Router), React, TypeScript, Tailwind CSS, Leaflet (maps)
 - **AI** — OpenRouter (Nvidia Nemotron) or Groq (Llama-3) for summary and chat
 - **Infrastructure** — Docker, docker-compose, GitHub Actions CI/CD
-- **Tests** — pytest, **123 test cases** with monkeypatching, network mocking, SSRF/auth coverage
+- **Tests** — pytest, **137 test cases** with monkeypatching, network mocking, SSRF/auth coverage
 
 <p align="center">
   <img src="docs/pics/main_showcase/main_showcase.png" alt="PRISM Dashboard" width="720" />
@@ -544,7 +544,7 @@ prism/
 │       ├── components/           # UI (Topbar, Sidebar, Map, Graph, ...)
 │       └── lib/                  # API client, i18n, types
 │
-└── tests/                        # 123 pytest tests
+└── tests/                        # 137 pytest tests
     ├── test_modules.py
     ├── test_modules_extended.py
     ├── test_v2_1_modules.py
