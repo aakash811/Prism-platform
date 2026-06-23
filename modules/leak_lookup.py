@@ -12,6 +12,7 @@ class LeakLookup:
     HIBP_API = "https://haveibeenpwned.com/api/v3"
     LEAK_LOOKUP_API = "https://leak-lookup.com/api/search"
     XON_API = "https://api.xposedornot.com/v1"
+    LEAKCHECK_PUBLIC = "https://leakcheck.io/api/public"
 
     def __init__(self):
         self.leak_lookup_key = LEAK_LOOKUP_API_KEY
@@ -118,6 +119,49 @@ class LeakLookup:
 
         return result
 
+    def check_email_leakcheck(self, email: str) -> Dict[str, Any]:
+        result = {
+            "email": email,
+            "breached": False,
+            "breaches": [],
+            "total_breaches": 0,
+            "error": None
+        }
+
+        try:
+            response = requests.get(
+                self.LEAKCHECK_PUBLIC,
+                params={"check": email},
+                headers={"User-Agent": "Mozilla/5.0 (compatible; PRISM-OSINT)"},
+                timeout=10
+            )
+
+            if response.status_code == 200:
+                data = response.json()
+                names: List[str] = []
+                for src in (data.get("sources") or []):
+                    if isinstance(src, dict) and src.get("name"):
+                        names.append(str(src["name"]))
+                    elif isinstance(src, str) and src:
+                        names.append(src)
+                if names:
+                    result["breached"] = True
+                    result["total_breaches"] = len(names)
+                    result["breaches"] = [{"name": n, "title": n} for n in names]
+                result["status"] = OK
+            elif response.status_code == 404:
+                result["breached"] = False
+                result["status"] = OK
+            elif response.status_code == 429:
+                annotate(result, RATE_LIMITED, "LeakCheck rate limit reached")
+            else:
+                result["error"] = f"LeakCheck returned status {response.status_code}"
+
+        except requests.exceptions.RequestException as e:
+            result["error"] = str(e)
+
+        return result
+
     def check_password_pwned(self, password: str) -> Dict[str, Any]:
         result = {
             "pwned": False,
@@ -202,6 +246,7 @@ class LeakLookup:
 
     def check_email_full(self, email: str) -> Dict[str, Any]:
         xon = self.check_email_xon(email)
+        leakcheck = self.check_email_leakcheck(email)
         hibp = self.check_email_hibp(email)
         leak_lookup = self.check_leak_lookup(email, "email_address") if self.leak_lookup_key else None
 
@@ -219,12 +264,13 @@ class LeakLookup:
                 "data_classes": b.get("data_classes", []),
                 "source": "HIBP",
             })
-        for b in xon.get("breaches", []):
-            name = b.get("name")
-            if not name or name.lower() in seen:
-                continue
-            seen.add(name.lower())
-            flat.append({"name": name, "title": name, "source": "XposedOrNot"})
+        for source_name, sub in (("XposedOrNot", xon), ("LeakCheck", leakcheck)):
+            for b in sub.get("breaches", []):
+                name = b.get("name")
+                if not name or name.lower() in seen:
+                    continue
+                seen.add(name.lower())
+                flat.append({"name": name, "title": name, "source": source_name})
         if leak_lookup:
             for leak in leak_lookup.get("leaks", []):
                 name = leak.get("source")
@@ -236,6 +282,7 @@ class LeakLookup:
         result = {
             "email": email,
             "xon": xon,
+            "leakcheck": leakcheck,
             "hibp": hibp,
             "leak_lookup": leak_lookup,
             "breaches": flat[:50],
@@ -246,7 +293,7 @@ class LeakLookup:
             "total_breaches": total,
         }
 
-        sub_statuses = [classify(xon), classify(hibp)]
+        sub_statuses = [classify(xon), classify(leakcheck), classify(hibp)]
         if leak_lookup is not None:
             sub_statuses.append(classify(leak_lookup))
 
@@ -261,7 +308,7 @@ class LeakLookup:
     @staticmethod
     def _aggregate_reason(level: str, result: Dict[str, Any]) -> Optional[str]:
         from modules.module_status import reason_for
-        for sub in (result.get("xon"), result.get("hibp"), result.get("leak_lookup")):
+        for sub in (result.get("xon"), result.get("leakcheck"), result.get("hibp"), result.get("leak_lookup")):
             if isinstance(sub, dict) and classify(sub) == level:
                 return reason_for(sub)
         if level == SKIPPED:

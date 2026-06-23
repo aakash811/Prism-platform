@@ -52,14 +52,12 @@ class TestOnionChecker:
 
 
 class TestCensysLookup:
-    def test_no_credentials_returns_skipped(self, monkeypatch):
-        monkeypatch.setattr("modules.censys_lookup.CENSYS_API_ID", "")
-        monkeypatch.setattr("modules.censys_lookup.CENSYS_API_SECRET", "")
+    def test_no_credentials_returns_skipped(self):
         from modules.censys_lookup import CensysLookup
         from modules.module_status import classify, SKIPPED
         cl = CensysLookup()
-        cl.api_id = ""
-        cl.api_secret = ""
+        cl.pat = ""
+        cl.org_id = ""
         result = cl.search_ip("8.8.8.8")
         assert classify(result) == SKIPPED
         assert result.get("error") is None
@@ -72,20 +70,20 @@ class TestCensysLookup:
         class MockResp:
             status_code = 200
             def json(self):
-                return {"result": {
+                return {"result": {"resource": {
+                    "ip": "8.8.8.8",
                     "autonomous_system": {"asn": 15169, "name": "GOOGLE"},
                     "location": {"country": "US", "city": "Mountain View"},
                     "services": [
-                        {"port": 80, "service_name": "HTTP", "transport_protocol": "TCP"},
-                        {"port": 443, "service_name": "HTTPS", "transport_protocol": "TCP",
-                         "software": [{"product": "nginx"}]},
+                        {"port": 80, "protocol": "HTTP", "transport_protocol": "TCP"},
+                        {"port": 443, "protocol": "HTTPS", "transport_protocol": "TCP"},
                     ],
-                }}
+                }}}
 
         monkeypatch.setattr(requests, "get", lambda *a, **k: MockResp())
         cl = CensysLookup()
-        cl.api_id = "id"
-        cl.api_secret = "secret"
+        cl.pat = "censys_token"
+        cl.org_id = "org123"
         result = cl.search_ip("8.8.8.8")
         assert result["error"] is None
         assert result["asn"] == 15169
@@ -105,35 +103,19 @@ class TestCensysLookup:
 
         monkeypatch.setattr(requests, "get", lambda *a, **k: MockResp())
         cl = CensysLookup()
-        cl.api_id = "id"
-        cl.api_secret = "secret"
+        cl.pat = "censys_token"
+        cl.org_id = "org123"
         result = cl.search_ip("1.2.3.4")
-        assert "Invalid Censys credentials" in (result.get("error") or "")
+        assert "Invalid Censys token" in (result.get("error") or "")
 
-    def test_search_domain_extracts_subdomains(self, monkeypatch):
-        import requests
+    def test_search_domain_skipped_on_platform(self):
         from modules.censys_lookup import CensysLookup
-
-        class MockResp:
-            status_code = 200
-            def json(self):
-                return {"result": {
-                    "hits": [
-                        {"fingerprint_sha256": "abc", "names": ["example.com", "*.example.com"]},
-                        {"fingerprint_sha256": "def", "names": ["api.example.com", "www.example.com"]},
-                    ],
-                    "total": 2,
-                }}
-
-        monkeypatch.setattr(requests, "post", lambda *a, **k: MockResp())
+        from modules.module_status import classify, SKIPPED
         cl = CensysLookup()
-        cl.api_id = "id"
-        cl.api_secret = "secret"
+        cl.pat = "censys_token"
+        cl.org_id = "org123"
         result = cl.search_domain("example.com")
-        assert result["error"] is None
-        assert "api.example.com" in result["subdomains"]
-        assert "www.example.com" in result["subdomains"]
-        assert result["total"] == 2
+        assert classify(result) == SKIPPED
 
 
 class TestPdfReport:

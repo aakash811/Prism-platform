@@ -1,73 +1,79 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 import requests
 
 from modules.module_status import annotate, OK, SKIPPED, RATE_LIMITED, ERROR
 
-CENSYS_API_ID = os.getenv("CENSYS_API_ID", "")
-CENSYS_API_SECRET = os.getenv("CENSYS_API_SECRET", "")
-CENSYS_BASE = "https://search.censys.io/api"
+CENSYS_PAT = os.getenv("CENSYS_PAT", "") or os.getenv("CENSYS_API_KEY", "")
+CENSYS_ORG_ID = os.getenv("CENSYS_ORG_ID", "")
+CENSYS_BASE = "https://api.platform.censys.io/v3"
 
 
 class CensysLookup:
 
     def __init__(self, timeout: int = 15):
         self.timeout = timeout
-        self.api_id = CENSYS_API_ID
-        self.api_secret = CENSYS_API_SECRET
+        self.pat = CENSYS_PAT
+        self.org_id = CENSYS_ORG_ID
 
-    def _auth(self) -> tuple[str, str] | None:
-        if not self.api_id or not self.api_secret:
-            return None
-        return (self.api_id, self.api_secret)
+    def _headers(self) -> Dict[str, str]:
+        return {
+            "Authorization": f"Bearer {self.pat}",
+            "Accept": "application/json",
+            "User-Agent": "PRISM-OSINT/2.4",
+        }
+
+    def _params(self) -> Dict[str, str]:
+        return {"organization_id": self.org_id} if self.org_id else {}
 
     def _err_no_key(self) -> Dict[str, Any]:
         return annotate(
             {"results": [], "total": 0},
             SKIPPED,
-            "No API key configured (CENSYS_API_ID / CENSYS_API_SECRET)",
+            "No API key configured (CENSYS_PAT)",
         )
 
     def search_ip(self, ip: str) -> Dict[str, Any]:
-        auth = self._auth()
-        if auth is None:
+        if not self.pat:
             return self._err_no_key()
         try:
             r = requests.get(
-                f"{CENSYS_BASE}/v2/hosts/{ip}",
-                auth=auth,
+                f"{CENSYS_BASE}/global/asset/host/{ip}",
+                headers=self._headers(),
+                params=self._params(),
                 timeout=self.timeout,
-                headers={"User-Agent": "PRISM-OSINT/2.1"},
             )
-            if r.status_code == 401:
-                return annotate({"results": [], "total": 0}, ERROR, "Invalid Censys credentials")
+            if r.status_code in (401, 403):
+                return annotate({"results": [], "total": 0}, ERROR, "Invalid Censys token or organization ID")
             if r.status_code == 429:
                 return annotate({"results": [], "total": 0}, RATE_LIMITED, "Censys API rate limit reached")
             if r.status_code == 404:
                 return annotate({"results": [], "total": 0, "ip": ip}, OK)
             if r.status_code != 200:
                 return annotate({"results": [], "total": 0}, ERROR, f"Censys HTTP {r.status_code}")
-            data = r.json().get("result", {})
-            services = data.get("services") or []
+
+            resource = ((r.json().get("result") or {}).get("resource")) or {}
+            services = resource.get("services") or []
+            asys = resource.get("autonomous_system") or {}
+            loc = resource.get("location") or {}
             return {
                 "error": None,
                 "status": OK,
                 "ip": ip,
-                "asn": (data.get("autonomous_system") or {}).get("asn"),
-                "as_name": (data.get("autonomous_system") or {}).get("name"),
-                "country": (data.get("location") or {}).get("country"),
-                "city": (data.get("location") or {}).get("city"),
+                "asn": asys.get("asn"),
+                "as_name": asys.get("name") or asys.get("description"),
+                "country": loc.get("country"),
+                "city": loc.get("city"),
                 "open_ports": sorted({s.get("port") for s in services if s.get("port")}),
                 "services": [
                     {
                         "port": s.get("port"),
-                        "service": s.get("service_name"),
+                        "service": s.get("protocol") or s.get("service_name"),
                         "transport": s.get("transport_protocol"),
-                        "software": (s.get("software") or [{}])[0].get("product")
-                        if s.get("software") else None,
+                        "software": None,
                     }
                     for s in services[:30]
                 ],
@@ -77,52 +83,10 @@ class CensysLookup:
             return annotate({"results": [], "total": 0}, ERROR, str(e)[:200])
 
     def search_domain(self, domain: str) -> Dict[str, Any]:
-        auth = self._auth()
-        if auth is None:
+        if not self.pat:
             return self._err_no_key()
-        try:
-            r = requests.post(
-                f"{CENSYS_BASE}/v2/certificates/search",
-                auth=auth,
-                timeout=self.timeout,
-                headers={"User-Agent": "PRISM-OSINT/2.1", "Content-Type": "application/json"},
-                json={
-                    "q": f"names: {domain}",
-                    "per_page": 50,
-                },
-            )
-            if r.status_code == 401:
-                return annotate({"results": [], "total": 0}, ERROR, "Invalid Censys credentials")
-            if r.status_code == 429:
-                return annotate({"results": [], "total": 0}, RATE_LIMITED, "Censys API rate limit reached")
-            if r.status_code == 404:
-
-                return annotate({"results": [], "total": 0, "domain": domain}, OK)
-            if r.status_code != 200:
-                return annotate({"results": [], "total": 0}, ERROR, f"Censys HTTP {r.status_code}")
-
-            data = r.json().get("result", {})
-            hits = data.get("hits") or []
-            subdomains: set[str] = set()
-            certs: List[Dict[str, Any]] = []
-            for h in hits[:50]:
-                names = h.get("names") or []
-                for n in names:
-                    n = (n or "").lower().lstrip("*.")
-                    if n.endswith(domain.lower()):
-                        subdomains.add(n)
-                certs.append({
-                    "fingerprint": h.get("fingerprint_sha256", "")[:24],
-                    "issuer": (h.get("parsed") or {}).get("issuer_dn", "")[:200],
-                    "names": names[:8],
-                })
-            return {
-                "error": None,
-                "status": OK,
-                "domain": domain,
-                "subdomains": sorted(subdomains),
-                "certificates": certs[:25],
-                "total": data.get("total", len(hits)),
-            }
-        except Exception as e:
-            return annotate({"results": [], "total": 0}, ERROR, str(e)[:200])
+        return annotate(
+            {"results": [], "total": 0, "domain": domain, "subdomains": [], "certificates": []},
+            SKIPPED,
+            "Certificate search is not available on the Censys Platform API; subdomains come from crt.sh",
+        )
