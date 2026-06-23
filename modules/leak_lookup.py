@@ -308,6 +308,13 @@ class LeakLookup:
     @staticmethod
     def _aggregate_reason(level: str, result: Dict[str, Any]) -> Optional[str]:
         from modules.module_status import reason_for
+        if level == SKIPPED:
+            free_blocked = [
+                s for s in (result.get("xon"), result.get("leakcheck"))
+                if isinstance(s, dict) and s.get("error")
+            ]
+            if free_blocked:
+                return "Free breach providers (XposedOrNot, LeakCheck) are unreachable from this host; set HIBP_API_KEY for an authenticated source"
         for sub in (result.get("xon"), result.get("leakcheck"), result.get("hibp"), result.get("leak_lookup")):
             if isinstance(sub, dict) and classify(sub) == level:
                 return reason_for(sub)
