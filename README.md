@@ -21,6 +21,7 @@ Scan any domain, IP, email, phone, or username — get WHOIS, DNS, threat intel,
 [![GitHub stars](https://img.shields.io/github/stars/NovaCode37/Prism-platform?style=flat-square&logo=github&color=yellow&cacheSeconds=3600)](https://github.com/NovaCode37/Prism-platform/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/NovaCode37/Prism-platform?style=flat-square&logo=github&cacheSeconds=3600)](https://github.com/NovaCode37/Prism-platform/network/members)
 [![Contributors](https://img.shields.io/github/contributors/NovaCode37/Prism-platform?style=flat-square&logo=github)](https://github.com/NovaCode37/Prism-platform/graphs/contributors)
+[![Views](https://visitor-badge.laobi.icu/badge?page_id=NovaCode37.Prism-platform&left_text=views)](https://github.com/NovaCode37/Prism-platform)
 
 </div>
 
