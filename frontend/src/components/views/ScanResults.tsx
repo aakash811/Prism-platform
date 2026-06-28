@@ -419,9 +419,9 @@ const TABS = [
   { id: 'ai', label: 'AI', icon: Brain },
 ];
 
-interface Props { scan: ScanMeta & { results: ScanResults }; }
+interface Props { scan: ScanMeta & { results: ScanResults }; onHome: () => void; }
 
-export function ScanResults({ scan }: Props) {
+export function ScanResults({ scan, onHome }: Props) {
   const { t: i18n, locale } = useTranslations();
   const [tab, setTab] = useState('findings');
   const [aiSummary, setAiSummary] = useState('');
@@ -773,6 +773,10 @@ export function ScanResults({ scan }: Props) {
           </div>
         </div>
         <div className="flex flex-wrap gap-2 sm:justify-end">
+          <button type="button" onClick={onHome}
+            className="btn-ghost text-[11px] h-8 px-3">
+            <Search size={11} /> {i18n('results.scanAnother')}
+          </button>
           <button type="button" onClick={() => openReport('html')} disabled={reportLoading !== null}
             className="btn-ghost text-[11px] h-8 px-3">
             {reportLoading === 'html' ? '...' : <ExternalLink size={11} />} {i18n('results.htmlReport')}

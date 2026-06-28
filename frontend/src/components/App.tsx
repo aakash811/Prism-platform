@@ -236,7 +236,7 @@ export function App() {
             </>
           )}
           {view === 'results' && scanMeta && (
-            <ScanResults scan={scanMeta} />
+            <ScanResults scan={scanMeta} onHome={handleHome} />
           )}
           {view === 'compare' && compareIds && (
             <ScanComparison scanIdA={compareIds[0]} scanIdB={compareIds[1]} onBack={handleHome} />

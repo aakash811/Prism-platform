@@ -215,6 +215,7 @@
     "jsonReport": "Baixar JSON",
     "csvReport": "Baixar CSV",
     "mdReport": "Baixar Markdown",
+    "scanAnother": "Nova verificação",
     "tabs": {
       "findings": "Resultados",
       "whois": "WHOIS",

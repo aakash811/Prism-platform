@@ -215,6 +215,7 @@
     "jsonReport": "Скачать JSON",
     "csvReport": "Скачать CSV",
     "mdReport": "Скачать Markdown",
+    "scanAnother": "Новое сканирование",
     "tabs": {
       "findings": "Находки",
       "whois": "WHOIS",
