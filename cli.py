@@ -14,6 +14,8 @@ if _PROJECT_ROOT not in sys.path:
 
 import config
 
+__version__ = "2.4.0"
+
 
 def detect_type(target: str) -> str:
     if "@" in target:
@@ -256,6 +258,7 @@ def build_parser() -> argparse.ArgumentParser:
         prog="prism",
         description="PRISM OSINT Platform - Command Line Interface",
     )
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     sub = parser.add_subparsers(dest="command")
 
     scan_p = sub.add_parser("scan", help="Run an OSINT scan against a target")
@@ -277,6 +280,7 @@ def build_parser() -> argparse.ArgumentParser:
     scan_p.add_argument("--pdf", dest="fmt_pdf", action="store_true", default=False, help="Generate PDF report")
     scan_p.add_argument("--output", "-o", default=None, help="Output file path")
     scan_p.add_argument("--verbose", "-v", action="store_true", default=False, help="Print progress to stderr")
+    scan_p.add_argument("--quiet", "-q", action="store_true", default=False, help="Print only the result (suppress banners and progress)")
 
     return parser
 
@@ -294,7 +298,9 @@ def main(argv: Optional[List[str]] = None) -> None:
         scan_type = args.scan_type or detect_type(target)
         modules = [m.strip() for m in args.modules.split(",") if m.strip()] if args.modules else None
 
-        if args.verbose:
+        verbose = args.verbose and not args.quiet
+
+        if verbose:
             print(f"Target : {target}", file=sys.stderr)
             print(f"Type   : {scan_type}", file=sys.stderr)
             if modules:
@@ -302,7 +308,7 @@ def main(argv: Optional[List[str]] = None) -> None:
             print(file=sys.stderr)
 
         try:
-            results = asyncio.run(run_scan(target, scan_type, modules, verbose=args.verbose))
+            results = asyncio.run(run_scan(target, scan_type, modules, verbose=verbose))
         except KeyboardInterrupt:
             print("\nScan interrupted.", file=sys.stderr)
             sys.exit(1)
@@ -319,11 +325,12 @@ def main(argv: Optional[List[str]] = None) -> None:
         else:
             output_json(results, path=output_path)
 
-        print(
-            "\n⭐ Found PRISM useful? Star it: "
-            "https://github.com/NovaCode37/Prism-platform",
-            file=sys.stderr,
-        )
+        if not args.quiet:
+            print(
+                "\n⭐ Found PRISM useful? Star it: "
+                "https://github.com/NovaCode37/Prism-platform",
+                file=sys.stderr,
+            )
         sys.exit(0)
 
 
