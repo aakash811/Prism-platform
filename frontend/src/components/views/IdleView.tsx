@@ -3,19 +3,10 @@ import { useEffect, useState } from 'react';
 import { FileText, Mail, Bitcoin, QrCode, ChevronRight, Globe, User, Phone, Shield, Database, Zap, Eye, Activity, Network, Hash, Binary, KeyRound, Search } from 'lucide-react';
 import { useTranslations } from '@/lib/i18n';
 import { getPrismDemoMode } from '@/lib/prism-config';
+import { detectScanType, normalizeScanTarget } from '@/lib/scan-target';
 import { Logo } from '../Logo';
 import { MODULE_MAP } from '../Sidebar';
 import type { ToolMode, ScanType } from '@/lib/types';
-
-function detectScanType(value: string): ScanType {
-  const s = value.trim();
-  if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s)) return 'email';
-  if (/^(\d{1,3}\.){3}\d{1,3}$/.test(s) || /^[0-9a-fA-F:]+:[0-9a-fA-F:]+$/.test(s)) return 'ip';
-  if (/^\+?[\d][\d\s().-]{6,}$/.test(s)) return 'phone';
-  if (s.startsWith('@')) return 'username';
-  if (s.includes('.') && !/\s/.test(s)) return 'domain';
-  return 'username';
-}
 
 const TOOL_IDS = ['metadata', 'headers', 'crypto', 'qr', 'mac', 'subnet', 'hash', 'encoder', 'jwt'] as const;
 type ToolId = typeof TOOL_IDS[number];
@@ -51,7 +42,7 @@ export function IdleView({ onTool, onScan }: Props) {
 
   const runQuickScan = (e: React.FormEvent) => {
     e.preventDefault();
-    const target = query.trim();
+    const target = normalizeScanTarget(query);
     if (!target) return;
     const type = detectScanType(target);
     onScan(target, type, MODULE_MAP[type]);

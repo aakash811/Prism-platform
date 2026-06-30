@@ -17,6 +17,20 @@ import config
 __version__ = "2.4.0"
 
 
+def normalize_target(target: str) -> str:
+    normalized = target.strip()
+    scheme_sep = normalized.find("://")
+    if scheme_sep != -1 and normalized[:scheme_sep].lower() in {"http", "https"}:
+        normalized = normalized[scheme_sep + 3:]
+    normalized = normalized.rstrip("/")
+
+    if "@" in normalized and not normalized.startswith("@"):
+        return normalized.lower()
+    if "." in normalized and not any(ch.isspace() for ch in normalized):
+        return normalized.lower()
+    return normalized
+
+
 def detect_type(target: str) -> str:
     if "@" in target:
         return "email"
@@ -294,7 +308,7 @@ def main(argv: Optional[List[str]] = None) -> None:
         sys.exit(1)
 
     if args.command == "scan":
-        target = args.target.strip()
+        target = normalize_target(args.target)
         scan_type = args.scan_type or detect_type(target)
         modules = [m.strip() for m in args.modules.split(",") if m.strip()] if args.modules else None
 
