@@ -920,20 +920,27 @@ export function ScanResults({ scan, onHome }: Props) {
 
         {tab === 'dns' && r.dns?.records && (
           <Card title="DNS Records" onRefresh={() => refreshModule('dns')} refreshing={isRefreshing('dns')}>
-            {Object.entries(r.dns.records).filter(([, v]) => Array.isArray(v) && v.length > 0).map(([type, records]) => (
-              <div key={type} className="mb-4">
-                <div className="text-[11px] font-bold text-blue mb-1.5 uppercase tracking-wider">{type}</div>
-                {(records as unknown[]).map((rec, i) => {
-                  const text = typeof rec === 'object' ? JSON.stringify(rec) : String(rec);
-                  return (
-                    <div key={i} className="flex items-center gap-1.5 py-0.5">
-                      <div className="font-mono text-[11px] text-text-2 break-all flex-1">{text}</div>
-                      <CopyIconButton onClick={() => copyValue(text)} label="Copy DNS record" />
-                    </div>
-                  );
-                })}
+            {Object.entries(r.dns.records).filter(([, v]) => Array.isArray(v) && v.length > 0).length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-center">
+                <Server size={24} className="text-text-3 opacity-40 mb-2" />
+                <div className="text-text-3 text-sm">No DNS records found</div>
               </div>
-            ))}
+            ) : (
+              Object.entries(r.dns.records).filter(([, v]) => Array.isArray(v) && v.length > 0).map(([type, records]) => (
+                <div key={type} className="mb-4">
+                  <div className="text-[11px] font-bold text-blue mb-1.5 uppercase tracking-wider">{type}</div>
+                  {(records as unknown[]).map((rec, i) => {
+                    const text = typeof rec === 'object' ? JSON.stringify(rec) : String(rec);
+                    return (
+                      <div key={i} className="flex items-center gap-1.5 py-0.5">
+                        <div className="font-mono text-[11px] text-text-2 break-all flex-1">{text}</div>
+                        <CopyIconButton onClick={() => copyValue(text)} label="Copy DNS record" />
+                      </div>
+                    );
+                  })}
+                </div>
+              ))
+            )}
           </Card>
         )}
 
@@ -987,6 +994,14 @@ export function ScanResults({ scan, onHome }: Props) {
               ))}</tbody>
             </table>
             </div>
+            {(r.blackbird?.filter(b => b.status === 'found' && (!accountFilter || b.site.toLowerCase().includes(accountFilter.toLowerCase())))?.length === 0) && (
+              <div className="flex flex-col items-center justify-center py-10 text-center">
+                <User size={24} className="text-text-3 opacity-40 mb-2" />
+                <div className="text-text-3 text-sm">
+                  {accountFilter ? 'No platforms match your filter' : 'No accounts found'}
+                </div>
+              </div>
+            )}
           </Card>
         )}
 
@@ -1039,31 +1054,41 @@ export function ScanResults({ scan, onHome }: Props) {
         {tab === 'threats' && (
           <div>
             <KeyModuleCard title="VirusTotal" mod={r.virustotal} onRefresh={() => refreshModule('virustotal')} refreshing={isRefreshing('virustotal')}>
-              <div className="grid grid-cols-2 sm:flex sm:gap-6 mb-4 gap-3">
-                {[['Malicious', r.virustotal?.malicious, '#f85149'], ['Suspicious', r.virustotal?.suspicious, '#d29922'], ['Harmless', r.virustotal?.harmless, '#3fb950'], ['Undetected', r.virustotal?.undetected, '#484f58']].map(([l, v, c]) => (
-                  <div key={String(l)} className="text-center">
-                    <div className="text-2xl font-black" style={{ color: String(c) }}>{v}</div>
-                    <div className="text-[10px] text-text-3">{l}</div>
+              {!r.virustotal?.malicious && !r.virustotal?.suspicious && !r.virustotal?.harmless && !r.virustotal?.undetected ? (
+                <div className="text-text-3 text-sm py-2">No threats detected</div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 sm:flex sm:gap-6 mb-4 gap-3">
+                    {[['Malicious', r.virustotal?.malicious, '#f85149'], ['Suspicious', r.virustotal?.suspicious, '#d29922'], ['Harmless', r.virustotal?.harmless, '#3fb950'], ['Undetected', r.virustotal?.undetected, '#484f58']].map(([l, v, c]) => (
+                      <div key={String(l)} className="text-center">
+                        <div className="text-2xl font-black" style={{ color: String(c) }}>{v}</div>
+                        <div className="text-[10px] text-text-3">{l}</div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-              <div className="space-y-1.5">
-                <DtRow label="Country" value={r.virustotal?.country} />
-                <DtRow label="ASN" value={r.virustotal?.as_owner} />
-              </div>
+                  <div className="space-y-1.5">
+                    <DtRow label="Country" value={r.virustotal?.country} />
+                    <DtRow label="ASN" value={r.virustotal?.as_owner} />
+                  </div>
+                </>
+              )}
             </KeyModuleCard>
             <KeyModuleCard title="AbuseIPDB" mod={r.abuseipdb} onRefresh={() => refreshModule('abuseipdb')} refreshing={isRefreshing('abuseipdb')}>
-              <div className="space-y-1.5">
-                <div className="dt-row"><span className="dt-label">Abuse Score</span>
-                  <span className="font-black" style={{ color: (r.abuseipdb?.abuse_score ?? 0) >= 50 ? '#f85149' : (r.abuseipdb?.abuse_score ?? 0) >= 10 ? '#d29922' : '#3fb950' }}>
-                    {r.abuseipdb?.abuse_score}/100
-                  </span>
+              {!r.abuseipdb?.abuse_score && !r.abuseipdb?.total_reports && !r.abuseipdb?.isp && !r.abuseipdb?.usage_type ? (
+                <div className="text-text-3 text-sm py-2">No threats detected</div>
+              ) : (
+                <div className="space-y-1.5">
+                  <div className="dt-row"><span className="dt-label">Abuse Score</span>
+                    <span className="font-black" style={{ color: (r.abuseipdb?.abuse_score ?? 0) >= 50 ? '#f85149' : (r.abuseipdb?.abuse_score ?? 0) >= 10 ? '#d29922' : '#3fb950' }}>
+                      {r.abuseipdb?.abuse_score}/100
+                    </span>
+                  </div>
+                  <DtRow label="Total Reports" value={r.abuseipdb?.total_reports} />
+                  <DtRow label="ISP" value={r.abuseipdb?.isp} />
+                  <DtRow label="Usage Type" value={r.abuseipdb?.usage_type} />
+                  {r.abuseipdb?.is_tor && <div className="text-red text-[12px] font-semibold mt-1">⚠ TOR Exit Node</div>}
                 </div>
-                <DtRow label="Total Reports" value={r.abuseipdb?.total_reports} />
-                <DtRow label="ISP" value={r.abuseipdb?.isp} />
-                <DtRow label="Usage Type" value={r.abuseipdb?.usage_type} />
-                {r.abuseipdb?.is_tor && <div className="text-red text-[12px] font-semibold mt-1">⚠ TOR Exit Node</div>}
-              </div>
+              )}
             </KeyModuleCard>
             <KeyModuleCard title="Shodan" mod={r.shodan} onRefresh={() => refreshModule('shodan')} refreshing={isRefreshing('shodan')}>
               {r.shodan?.open_ports?.length ? (
@@ -1083,6 +1108,9 @@ export function ScanResults({ scan, onHome }: Props) {
                   {r.shodan.vulns.map(v => <span key={v} className="tag tag-red">{v}</span>)}
                 </div>
               ) : null}
+              {!r.shodan?.open_ports?.length && !r.shodan?.vulns?.length && (
+                <div className="text-text-3 text-sm py-2">No threats detected</div>
+              )}
             </KeyModuleCard>
           </div>
         )}
@@ -1161,37 +1189,46 @@ export function ScanResults({ scan, onHome }: Props) {
 
         {tab === 'wayback' && r.wayback && (
           <Card title="Wayback Machine" onRefresh={() => refreshModule('wayback')} refreshing={isRefreshing('wayback')}>
-            {r.wayback.total_snapshots && (
-              <div className="text-[12px] text-text-2 mb-4">
-                {r.wayback.total_snapshots} snapshots · First: {r.wayback.first_snapshot} · Last: {r.wayback.last_snapshot}
+            {!r.wayback.snapshots?.length && !r.wayback.interesting?.length ? (
+              <div className="flex flex-col items-center justify-center py-10 text-center">
+                <Clock size={24} className="text-text-3 opacity-40 mb-2" />
+                <div className="text-text-3 text-sm">No archived snapshots found</div>
               </div>
-            )}
-            {r.wayback.snapshots?.length && (
-              <div className="mb-4">
-                <div className="text-[11px] font-semibold text-blue mb-2">Recent Snapshots</div>
-                <div className="space-y-1">
-                  {r.wayback.snapshots.slice(0, 10).map(s => (
-                    <div key={s.timestamp} className="flex items-center gap-2 text-[10px]">
-                      <span className="text-text-3 font-mono">{s.date}</span>
-                      <a href={s.wayback_url} target="_blank" rel="noreferrer" className="text-blue hover:underline truncate flex-1">
-                        {s.wayback_url}
-                      </a>
-                      <span className="text-text-3">{s.mime}</span>
-                      {s.size > 0 && <span className="text-text-3">{Math.round(s.size/1024)}KB</span>}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            {r.wayback.interesting?.length && (
-              <div>
-                <div className="text-[11px] font-semibold text-red mb-2">Sensitive URLs in Archive</div>
-                {r.wayback.interesting.slice(0, 15).map(url => (
-                  <div key={url} className="font-mono text-[10px] text-text-2 py-0.5 truncate">
-                    <a href={url} target="_blank" rel="noreferrer" className="hover:text-blue">{url}</a>
+            ) : (
+              <>
+                {r.wayback.total_snapshots && (
+                  <div className="text-[12px] text-text-2 mb-4">
+                    {r.wayback.total_snapshots} snapshots · First: {r.wayback.first_snapshot} · Last: {r.wayback.last_snapshot}
                   </div>
-                ))}
-              </div>
+                )}
+                {r.wayback.snapshots?.length && (
+                  <div className="mb-4">
+                    <div className="text-[11px] font-semibold text-blue mb-2">Recent Snapshots</div>
+                    <div className="space-y-1">
+                      {r.wayback.snapshots.slice(0, 10).map(s => (
+                        <div key={s.timestamp} className="flex items-center gap-2 text-[10px]">
+                          <span className="text-text-3 font-mono">{s.date}</span>
+                          <a href={s.wayback_url} target="_blank" rel="noreferrer" className="text-blue hover:underline truncate flex-1">
+                            {s.wayback_url}
+                          </a>
+                          <span className="text-text-3">{s.mime}</span>
+                          {s.size > 0 && <span className="text-text-3">{Math.round(s.size/1024)}KB</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {r.wayback.interesting?.length && (
+                  <div>
+                    <div className="text-[11px] font-semibold text-red mb-2">Sensitive URLs in Archive</div>
+                    {r.wayback.interesting.slice(0, 15).map(url => (
+                      <div key={url} className="font-mono text-[10px] text-text-2 py-0.5 truncate">
+                        <a href={url} target="_blank" rel="noreferrer" className="hover:text-blue">{url}</a>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </Card>
         )}
@@ -1265,6 +1302,9 @@ export function ScanResults({ scan, onHome }: Props) {
             )}
             <KeyModuleCard title="Breach Check" mod={r.breaches} onRefresh={() => refreshModule('leaks', ['breaches'])} refreshing={isRefreshing('leaks')}>
               <div className="space-y-1.5">
+                {(r.breaches?.breaches?.length ?? 0) === 0 && r.breaches?.found === false && (
+                  <div className="text-green text-sm py-1">✓ No breaches found</div>
+                )}
                 {r.breaches?.found !== undefined && (
                   <div className="dt-row"><span className="dt-label">Breaches Found</span>
                     <span className={r.breaches?.found ? 'text-red font-bold' : 'text-green'}>{r.breaches?.found ? 'Yes' : 'No'}</span>
@@ -1288,15 +1328,19 @@ export function ScanResults({ scan, onHome }: Props) {
 
         {tab === 'dorks' && r.dorks && (
           <Card title="Google Dorks">
-            {r.dorks.map((d, i) => (
-              <div key={i} className="flex items-center gap-2 py-1.5 border-b border-border-1 last:border-0">
-                <code className="font-mono text-[11px] text-text-1 flex-1 truncate">{d}</code>
-                <a href={`https://www.google.com/search?q=${encodeURIComponent(d)}`} target="_blank" rel="noreferrer"
-                  className="text-blue hover:text-white transition-colors flex-shrink-0">
-                  <ExternalLink size={11} />
-                </a>
-              </div>
-            ))}
+            {r.dorks.length === 0 ? (
+              <div className="text-text-3 text-sm py-2">No dorks generated</div>
+            ) : (
+              r.dorks.map((d, i) => (
+                <div key={i} className="flex items-center gap-2 py-1.5 border-b border-border-1 last:border-0">
+                  <code className="font-mono text-[11px] text-text-1 flex-1 truncate">{d}</code>
+                  <a href={`https://www.google.com/search?q=${encodeURIComponent(d)}`} target="_blank" rel="noreferrer"
+                    className="text-blue hover:text-white transition-colors flex-shrink-0">
+                    <ExternalLink size={11} />
+                  </a>
+                </div>
+              ))
+            )}
           </Card>
         )}
 
