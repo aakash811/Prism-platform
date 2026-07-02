@@ -83,7 +83,7 @@ class TestClassify:
     def test_preceedence_of_rate_limit_hints_over_skipped_hints(self):
         assert classify({"error":"rate limit and no api"}) == RATE_LIMITED
     
-    def test_status_override_error_message(self):
+    def test_status_precedence_over_error_message(self):
         assert classify({"status": RATE_LIMITED, "error":"not set"}) == RATE_LIMITED
         assert classify({"status": SKIPPED, "error":"rate limit"}) == SKIPPED
 
