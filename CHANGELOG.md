@@ -6,10 +6,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [Unreleased]
+## [2.5.0] — 2026-07-04
+
+### Added
+- **Watchlists & scheduled scans** — save a target to re-scan on a schedule and get alerted only when results actually change (new open ports, subdomains, breaches, DNS records). Diff alerting ignores volatile fields (timestamps, response times) so you see real changes, not noise. Optional webhook notifications. New `POST/GET/DELETE /api/watchlist` + `GET /api/watchlist/{id}/alerts` endpoints, a background scheduler, and a Watchlists UI in the topbar.
+- **Entity graph export to GraphML / GEXF** — export the entity graph of any scan for Gephi or Maltego, via the Graph tab or `GET /api/scan/{id}/graph/export?fmt=graphml|gexf`.
+- **Per-API-key quotas + usage endpoint** — optional daily scan quota per API key (`SCAN_QUOTA_PER_DAY`), enforced with a 429, plus a `GET /api/usage` endpoint reporting used / limit / remaining / reset time.
+- **Chinese (Simplified) locale** — full `zh` translation; PRISM now ships in 9 languages with browser-language auto-detection.
+- **CLI `--quiet` and `--version` flags** — `--quiet` suppresses banners/progress for clean piping; `--version` prints the version (#127).
+- **Copy as cURL** button on scan results (#124), **Gravatar recon module** for email scans (#125), and per-value **empty-state placeholders** in results (#144).
+- Additional **good-first-issue** contributions: `--output` CLI flag, custom 404 page (#112), aria-labels on icon buttons (#135), Italian / Portuguese / Polish locales, `/api/health` endpoint (#128), and expanded Base64/URL-encoder and module-status test coverage.
+
+### Security
+- **SSRF hardening** — scan targets (and watchlist targets) that resolve to private, loopback, link-local, or cloud-metadata addresses are blocked by default; self-hosters can allow them with `ALLOW_PRIVATE_TARGETS=true`.
+- **Maigret path-traversal fix** — usernames are sanitized before being used in output filenames, and passed after a `--` separator so a `-`-prefixed username can't be parsed as a flag.
 
 ### Changed
 - **Readability** — the UI now uses the Inter sans-serif font instead of the Silkscreen pixel font (kept only for the PRISM logo wordmark), and the low-contrast dark-theme secondary text color was raised to meet readable contrast for field labels, inactive tabs, and placeholders (#130).
+- **Scan targets are normalized** before type detection — leading `http(s)://`, trailing slashes, and case are stripped so `HTTPS://Example.COM/` scans cleanly (#142).
+- The frontend now runs in CI (typecheck, lint, tests, build).
 
 ### Fixed
 - **Mobile: the target field couldn't be used** — the landing screen's `target://` box was a decorative element, not a real input, so tapping it never brought up the keyboard (especially on iOS). It is now a real input that auto-detects the target type and starts a scan directly from the home screen.

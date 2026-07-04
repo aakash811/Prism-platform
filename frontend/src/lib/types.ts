@@ -344,6 +344,29 @@ export interface MacResult {
   error?: string;
 }
 
+export interface WatchlistAlert {
+  at: number;
+  added: string[];
+  removed: string[];
+  added_count: number;
+  removed_count: number;
+}
+
+export interface Watchlist {
+  id: string;
+  target: string;
+  scan_type: ScanType;
+  modules: string[];
+  interval_hours: number;
+  webhook_url?: string | null;
+  created_at: number;
+  last_run: number | null;
+  next_run: number;
+  last_status: string;
+  run_count: number;
+  alerts: WatchlistAlert[];
+}
+
 export interface JwtResult {
   header?: Record<string, unknown>;
   payload?: Record<string, unknown>;

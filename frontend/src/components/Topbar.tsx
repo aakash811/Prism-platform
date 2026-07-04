@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Loader2, CheckCircle, XCircle, Github, Star, Terminal, Sun, Moon, Menu, Languages, Book } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, Github, Star, Terminal, Sun, Moon, Menu, Languages, Book, Eye } from 'lucide-react';
 import { useTheme } from '@/lib/useTheme';
 import { useTranslations, SUPPORTED_LOCALES } from '@/lib/i18n';
 import { Logo } from './Logo';
@@ -9,6 +9,7 @@ import type { ScanStatus } from '@/lib/types';
 interface Props {
   status: ScanStatus;
   onHome: () => void;
+  onWatchlist: () => void;
   onMenuToggle: () => void;
 }
 
@@ -29,7 +30,7 @@ function useDateTime() {
   return dt;
 }
 
-export function Topbar({ status, onHome, onMenuToggle }: Props) {
+export function Topbar({ status, onHome, onWatchlist, onMenuToggle }: Props) {
   const { date, time } = useDateTime();
   const { theme, toggleTheme, mounted } = useTheme();
   const { locale, setLocale, t } = useTranslations();
@@ -49,7 +50,7 @@ export function Topbar({ status, onHome, onMenuToggle }: Props) {
           className="text-[9px] font-bold tracking-widest px-1.5 py-0.5 rounded-full text-white"
           style={{ background: 'linear-gradient(135deg,#4f8ef7,#7c5cfc)' }}
         >
-          v2.4.0
+          v2.5.0
         </span>
       </button>
 
@@ -85,6 +86,15 @@ export function Topbar({ status, onHome, onMenuToggle }: Props) {
           </div>
         )}
         <div className="w-px h-4 bg-border-1" />
+        <button
+          onClick={onWatchlist}
+          className="flex items-center gap-1 text-text-3 hover:text-text-1 transition-colors p-1.5 rounded-sm hover:bg-surface-2 text-[11px]"
+          title="Watchlists"
+          aria-label="Watchlists"
+        >
+          <Eye size={15} />
+          <span className="hidden sm:inline">Watch</span>
+        </button>
         <button
           onClick={() => {
             const idx = SUPPORTED_LOCALES.indexOf(locale);

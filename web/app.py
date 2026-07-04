@@ -38,9 +38,10 @@ _LLM_MODEL = "nvidia/nemotron-3-nano-30b-a3b:free" if OPENROUTER_API_KEY else "l
 
 from web.security import (
     require_api_key, validate_target, check_upload_size, get_allowed_origins,
-    limiter, validate_scan_id, validate_url_not_private,
+    limiter, validate_scan_id, validate_url_not_private, validate_public_target,
     get_principal, principal_for_key, ANONYMOUS_PRINCIPAL,
     env_flag, normalize_base_path, parse_csv_env,
+    check_scan_quota, record_scan, get_usage,
 )
 
 _disable_docs = os.getenv("DISABLE_DOCS", "").lower() in ("1", "true", "yes")
@@ -54,7 +55,7 @@ _RESERVED_FRONTEND_PATHS = {"api", "ws", "healthz", "docs", "redoc", "openapi.js
 
 app = FastAPI(
     title="OSINT Toolkit",
-    version="2.4.0",
+    version="2.5.0",
     root_path=_BASE_PATH,
     docs_url=None if _disable_docs else "/docs",
     redoc_url=None if _disable_docs else "/redoc",
@@ -96,6 +97,7 @@ async def _startup_banner() -> None:
         "https://github.com/NovaCode37/Prism-platform\n",
         flush=True,
     )
+    _start_watchlist_scheduler()
 
 _scans: Dict[str, Dict] = {}
 _queues: Dict[str, asyncio.Queue] = {}
@@ -230,6 +232,13 @@ class ScanRequest(BaseModel):
     webhook_url: Optional[str] = None
     force_refresh: bool = False
 
+class WatchlistRequest(BaseModel):
+    target: str
+    scan_type: str = "auto"
+    modules: List[str] = []
+    interval_hours: float = 24.0
+    webhook_url: Optional[str] = None
+
 WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "").strip()
 
 def _is_public_ip(addr) -> bool:
@@ -286,6 +295,50 @@ def _validate_webhook_url(url: str) -> str:
                                                                        
         pass
     return url
+
+def _run_watchlist_once(entry: Dict[str, Any]) -> None:
+    from web import watchlist
+    import cli
+    wid = entry["id"]
+    modules = entry.get("modules") or None
+    try:
+        results = asyncio.run(cli.run_scan(entry["target"], entry["scan_type"], modules))
+    except Exception:
+        watchlist.mark_error(wid)
+        return
+    alert = watchlist.record_run(wid, results)
+    if alert and entry.get("webhook_url"):
+        payload = {
+            "event": "watchlist_alert",
+            "watchlist_id": wid,
+            "target": entry["target"],
+            "scan_type": entry["scan_type"],
+            "added": alert["added_count"],
+            "removed": alert["removed_count"],
+            "changes": (alert["added"][:10] + [f"-{c}" for c in alert["removed"][:10]]),
+        }
+        _send_webhook(entry["webhook_url"], payload)
+
+def _watchlist_scheduler_loop() -> None:
+    poll = int(os.getenv("WATCHLIST_POLL_SECONDS") or "60")
+    while True:
+        try:
+            if env_flag("WATCHLIST_SCHEDULER", True):
+                from web import watchlist
+                for entry in watchlist.due_watchlists():
+                    _run_watchlist_once(entry)
+        except Exception:
+            pass
+        time.sleep(poll)
+
+_watchlist_thread_started = False
+
+def _start_watchlist_scheduler() -> None:
+    global _watchlist_thread_started
+    if _watchlist_thread_started or not env_flag("WATCHLIST_SCHEDULER", True):
+        return
+    _watchlist_thread_started = True
+    threading.Thread(target=_watchlist_scheduler_loop, daemon=True).start()
 
 def _send_webhook(url: str, payload: Dict[str, Any]) -> None:
     from urllib.parse import urlparse
@@ -619,6 +672,55 @@ async def healthz():
 async def health():
     return {"status": "ok", "version": app.version}
 
+@app.get("/api/usage", dependencies=[Depends(require_api_key)])
+@limiter.limit("60/minute")
+async def usage(request: Request):
+    return get_usage(get_principal(request))
+
+@app.post("/api/watchlist", dependencies=[Depends(require_api_key)])
+@limiter.limit("20/minute")
+async def create_watchlist_entry(request: Request, req: WatchlistRequest):
+    from web import watchlist
+    target = validate_target(req.target)
+    scan_type = req.scan_type if req.scan_type != "auto" else _detect_type(target)
+    validate_public_target(target, scan_type)
+    webhook_url = None
+    if req.webhook_url:
+        try:
+            webhook_url = _validate_webhook_url(req.webhook_url.strip())
+        except ValueError as e:
+            return JSONResponse({"error": str(e)}, status_code=400)
+    interval = max(1.0, min(float(req.interval_hours or 24.0), 24 * 30))
+    entry = watchlist.create_watchlist(
+        get_principal(request), target, scan_type, req.modules, interval, webhook_url,
+    )
+    return entry
+
+@app.get("/api/watchlist", dependencies=[Depends(require_api_key)])
+@limiter.limit("60/minute")
+async def list_watchlist(request: Request):
+    from web import watchlist
+    return {"watchlists": watchlist.list_watchlists(get_principal(request))}
+
+@app.get("/api/watchlist/{watch_id}/alerts", dependencies=[Depends(require_api_key)])
+@limiter.limit("60/minute")
+async def watchlist_alerts(request: Request, watch_id: str):
+    from web import watchlist
+    validate_scan_id(watch_id)
+    entry = watchlist.get_watchlist(watch_id)
+    if not entry or (entry.get("owner") or ANONYMOUS_PRINCIPAL) != get_principal(request):
+        return JSONResponse({"error": "Watchlist not found"}, status_code=404)
+    return {"id": watch_id, "alerts": entry.get("alerts", [])}
+
+@app.delete("/api/watchlist/{watch_id}", dependencies=[Depends(require_api_key)])
+@limiter.limit("30/minute")
+async def delete_watchlist_entry(request: Request, watch_id: str):
+    from web import watchlist
+    validate_scan_id(watch_id)
+    if not watchlist.delete_watchlist(watch_id, get_principal(request)):
+        return JSONResponse({"error": "Watchlist not found"}, status_code=404)
+    return {"deleted": watch_id}
+
 @app.post("/api/scan", dependencies=[Depends(require_api_key)])
 @limiter.limit("10/minute")
 async def start_scan(request: Request, req: ScanRequest):
@@ -632,6 +734,12 @@ async def start_scan(request: Request, req: ScanRequest):
             return JSONResponse({"error": str(e)}, status_code=400)
 
     scan_type = req.scan_type if req.scan_type != "auto" else _detect_type(target)
+    validate_public_target(target, scan_type)
+
+    principal = get_principal(request)
+    check_scan_quota(principal)
+    record_scan(principal)
+
     scan_id = str(uuid.uuid4())
 
     _evict_old_scans()
@@ -685,9 +793,29 @@ async def get_graph(request: Request, scan_id: str):
         return JSONResponse({"error": "Scan not found or not completed"}, status_code=404)
     return scan["results"].get("graph", {"nodes": [], "edges": []})
 
-                                                                       
-                                                                        
-                                                                   
+
+@app.get("/api/scan/{scan_id}/graph/export", dependencies=[Depends(require_api_key)])
+@limiter.limit("30/minute")
+async def export_graph(request: Request, scan_id: str, fmt: str = "graphml"):
+    validate_scan_id(scan_id)
+    scan = _load_scan(scan_id)
+    if not scan or not _scan_visible_to(scan, get_principal(request)) or not scan.get("results"):
+        return JSONResponse({"error": "Scan not found or not completed"}, status_code=404)
+    graph = scan["results"].get("graph", {"nodes": [], "edges": []})
+    fmt = (fmt or "graphml").lower()
+    from modules.graph_export import to_graphml, to_gexf
+    if fmt == "gexf":
+        body, media, ext = to_gexf(graph), "application/gexf+xml", "gexf"
+    elif fmt == "graphml":
+        body, media, ext = to_graphml(graph), "application/graphml+xml", "graphml"
+    else:
+        return JSONResponse({"error": "Unsupported format. Use graphml or gexf."}, status_code=400)
+    filename = f"prism_{scan_id[:8]}.{ext}"
+    return Response(
+        content=body,
+        media_type=media,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 @app.get("/api/scan/{scan_id}/map", dependencies=[Depends(require_api_key)])
 @limiter.limit("30/minute")

@@ -1,4 +1,4 @@
-import type { ScanType, ScanResults, ScanMeta, UrlScanResult, CryptoResult, DarkWebResult, QrResult, HeaderAnalysisResult, MetaResult } from './types';
+import type { ScanType, ScanResults, ScanMeta, UrlScanResult, CryptoResult, DarkWebResult, QrResult, HeaderAnalysisResult, MetaResult, Watchlist, WatchlistAlert } from './types';
 import { getPrismApiKey, getPrismApiUrl, getPrismBasePath } from './prism-config';
 import { buildApiUrl, buildWsUrl, normalizeBasePath } from './url-utils';
 
@@ -147,4 +147,67 @@ export async function fetchReportBlob(scanId: string, format: 'html' | 'pdf', la
     throw new Error(`HTTP ${r.status}: ${detail}`);
   }
   return r.blob();
+}
+
+export async function fetchGraphExport(scanId: string, fmt: 'graphml' | 'gexf'): Promise<Blob> {
+  const r = await fetch(apiUrl(`/api/scan/${scanId}/graph/export?fmt=${fmt}`), { headers: authHeaders() });
+  if (!r.ok) {
+    const text = await r.text();
+    let detail = text.slice(0, 200);
+    try { detail = JSON.parse(text)?.detail ?? detail; } catch {}
+    throw new Error(`HTTP ${r.status}: ${detail}`);
+  }
+  return r.blob();
+}
+
+async function get<T>(path: string): Promise<T> {
+  let r: Response;
+  try {
+    r = await fetch(apiUrl(path), { headers: authHeaders() });
+  } catch {
+    throw new Error(`Cannot reach backend at ${backendLabel()} - is it running?`);
+  }
+  const text = await r.text();
+  if (!r.ok) {
+    let detail = text.slice(0, 200);
+    try { detail = JSON.parse(text)?.detail ?? detail; } catch {}
+    throw new Error(`HTTP ${r.status}: ${detail}`);
+  }
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new Error(`Invalid JSON from server: ${text.slice(0, 120)}`);
+  }
+}
+
+async function del(path: string): Promise<void> {
+  const r = await fetch(apiUrl(path), { method: 'DELETE', headers: authHeaders() });
+  if (!r.ok) {
+    const text = await r.text();
+    let detail = text.slice(0, 200);
+    try { detail = JSON.parse(text)?.detail ?? detail; } catch {}
+    throw new Error(`HTTP ${r.status}: ${detail}`);
+  }
+}
+
+export function listWatchlists(): Promise<{ watchlists: Watchlist[] }> {
+  return get('/api/watchlist');
+}
+
+export function createWatchlist(body: {
+  target: string;
+  scan_type: ScanType | 'auto';
+  modules: string[];
+  interval_hours: number;
+  webhook_url?: string;
+}): Promise<Watchlist> {
+  return post('/api/watchlist', body);
+}
+
+export function deleteWatchlist(id: string): Promise<void> {
+  return del(`/api/watchlist/${id}`);
+}
+
+export function getWatchlistAlerts(id: string): Promise<{ id: string; alerts: WatchlistAlert[] }> {
+  return get(`/api/watchlist/${id}/alerts`);
 }

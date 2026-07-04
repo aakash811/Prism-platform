@@ -93,6 +93,49 @@ async def require_api_key(request: Request) -> None:
 def get_principal(request: Request) -> str:
     return getattr(request.state, "principal", ANONYMOUS_PRINCIPAL)
 
+import time as _time
+
+SCAN_QUOTA_PER_DAY = int(os.getenv("SCAN_QUOTA_PER_DAY") or "0")
+_WINDOW_SECONDS = 86400
+_usage: dict = {}
+
+def _usage_window(principal: str) -> dict:
+    now = _time.time()
+    entry = _usage.get(principal)
+    if entry is None or now - entry["window_start"] >= _WINDOW_SECONDS:
+        entry = {"count": 0, "window_start": now}
+        _usage[principal] = entry
+    return entry
+
+def get_usage(principal: str) -> dict:
+    entry = _usage_window(principal)
+    limit = SCAN_QUOTA_PER_DAY
+    used = entry["count"]
+    resets_at = entry["window_start"] + _WINDOW_SECONDS
+    return {
+        "principal": principal,
+        "used": used,
+        "limit": limit if limit > 0 else None,
+        "remaining": max(limit - used, 0) if limit > 0 else None,
+        "resets_at": resets_at,
+        "window_seconds": _WINDOW_SECONDS,
+    }
+
+def check_scan_quota(principal: str) -> None:
+    if SCAN_QUOTA_PER_DAY <= 0:
+        return
+    entry = _usage_window(principal)
+    if entry["count"] >= SCAN_QUOTA_PER_DAY:
+        resets_at = entry["window_start"] + _WINDOW_SECONDS
+        raise HTTPException(
+            status_code=429,
+            detail=f"Daily scan quota of {SCAN_QUOTA_PER_DAY} reached. Resets at {int(resets_at)} (unix).",
+        )
+
+def record_scan(principal: str) -> None:
+    entry = _usage_window(principal)
+    entry["count"] += 1
+
 def principal_for_key(key: Optional[str]) -> Optional[str]:
     if not _API_KEYS:
         return ANONYMOUS_PRINCIPAL if _allow_anonymous_api() else None
@@ -127,6 +170,37 @@ def validate_scan_id(scan_id: str) -> str:
     except (ValueError, AttributeError):
         raise HTTPException(status_code=400, detail="Invalid scan ID format.")
     return scan_id
+
+def _is_blocked_ip(ip_str: str) -> bool:
+    import ipaddress
+    try:
+        addr = ipaddress.ip_address(ip_str)
+    except ValueError:
+        return False
+    return (addr.is_private or addr.is_loopback or addr.is_reserved
+            or addr.is_link_local or addr.is_multicast or addr.is_unspecified)
+
+def validate_public_target(target: str, scan_type: str) -> None:
+    if env_flag("ALLOW_PRIVATE_TARGETS", False):
+        return
+    if scan_type not in ("domain", "ip"):
+        return
+    import ipaddress
+    import socket
+    host = target.strip()
+    try:
+        ipaddress.ip_address(host)
+        addrs = [host]
+    except ValueError:
+        try:
+            addrs = [sa[0] for *_rest, sa in socket.getaddrinfo(host, None)]
+        except socket.gaierror:
+            return
+    if any(_is_blocked_ip(ip_str) for ip_str in addrs):
+        raise HTTPException(
+            status_code=400,
+            detail="Scanning private/internal addresses is disabled on this server.",
+        )
 
 def validate_url_not_private(url: str) -> str:
     import ipaddress

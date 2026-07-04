@@ -616,12 +616,15 @@ GitHub Actions pipeline (`.github/workflows/ci.yml`):
 - [x] Friendly empty states (graph tab) and more rotating sidebar tips
 - [x] Hardening — Unicode (DejaVu) fonts in PDF, robust startup env parsing, apt-retry Docker builds
 
-### v2.5 — planned
-- [ ] Scheduled scans + continuous monitoring / watchlists with diff alerting
-- [ ] Entity graph export to GEXF / GraphML (Gephi / Maltego)
-- [ ] Per-API-key quotas and usage-stats endpoint
+### v2.5 — released
+- [x] Scheduled scans + continuous monitoring / watchlists with diff alerting
+- [x] Entity graph export to GEXF / GraphML (Gephi / Maltego)
+- [x] Per-API-key quotas and usage-stats endpoint
+- [x] Additional locale (ZH) — 9 languages, with dark / light theme toggle
+- [x] SSRF hardening for scan/watchlist targets + maigret path-traversal fix
+
+### v2.6 — planned
 - [ ] Browser extension for one-click scans
-- [ ] Additional locales (ZH) + dark / light theme toggle
 - [ ] *(exploring)* AI OSINT agent — autonomous multi-module investigation
 
 > Want to contribute? Pick an open issue tagged `good first issue` or open a new one.

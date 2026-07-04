@@ -5,6 +5,10 @@
 *.pem
 secrets/
 
+watchlist_data/
+scan_data/
+module_cache/
+
 __pycache__/
 *.py[cod]
 *.pyo

@@ -8,10 +8,11 @@ import { ScanResults } from './views/ScanResults';
 import { ResultsSkeleton } from './ResultsSkeleton';
 import { ToolPanels } from './tools/ToolPanels';
 import { ScanComparison } from './views/ScanComparison';
+import { WatchlistView } from './views/WatchlistView';
 import { startScan, getWsUrl, getScan } from '@/lib/api';
 import type { ScanType, ScanStatus, ToolMode, ScanResults as ScanResultsType, ScanMeta, LiveModuleStatus } from '@/lib/types';
 
-type View = 'idle' | 'tool' | 'scanning' | 'results' | 'compare';
+type View = 'idle' | 'tool' | 'scanning' | 'results' | 'compare' | 'watchlist';
 
 const LIVE_STATUSES: readonly LiveModuleStatus[] = ['ok', 'skipped', 'rate_limited', 'error', 'running'];
 
@@ -62,6 +63,10 @@ export function App() {
   const handleTool = useCallback((mode: ToolMode) => {
     setToolMode(mode);
     setView('tool');
+  }, []);
+
+  const handleWatchlist = useCallback(() => {
+    setView('watchlist');
   }, []);
 
   const fetchAndShowResults = useCallback(async (id: string) => {
@@ -220,7 +225,7 @@ export function App() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Topbar status={scanStatus} onHome={handleHome} onMenuToggle={() => setSidebarOpen(v => !v)} />
+      <Topbar status={scanStatus} onHome={handleHome} onWatchlist={handleWatchlist} onMenuToggle={() => setSidebarOpen(v => !v)} />
       <div className="flex flex-1 relative">
         {sidebarOpen && <div onClick={() => setSidebarOpen(false)} className="fixed inset-0 bg-black/50 z-40 md:hidden" />}
         <Sidebar onScan={handleScan} onLoadScan={handleLoadScan} onCompare={handleCompare} isRunning={scanStatus === 'running'} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
@@ -241,6 +246,7 @@ export function App() {
           {view === 'compare' && compareIds && (
             <ScanComparison scanIdA={compareIds[0]} scanIdB={compareIds[1]} onBack={handleHome} />
           )}
+          {view === 'watchlist' && <WatchlistView onBack={handleHome} />}
         </main>
       </div>
     </div>

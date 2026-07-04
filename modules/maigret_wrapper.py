@@ -1,5 +1,6 @@
 import subprocess
 import os
+import re
 import json
 from typing import Dict, List, Any, Optional
 from datetime import datetime
@@ -77,11 +78,12 @@ class MaigretWrapper:
         }
 
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        base_filename = f"maigret_{username}_{timestamp}"
+        safe_username = re.sub(r'[^A-Za-z0-9_.-]', '_', username)[:64] or "target"
+        base_filename = f"maigret_{safe_username}_{timestamp}"
         output_path = os.path.join(OUTPUT_DIR, base_filename)
 
         cmd = [
-            self.maigret_bin, username,
+            self.maigret_bin,
             "--timeout", str(timeout),
             "--top-sites", str(top_sites),
             "--retries", "1",
@@ -108,6 +110,8 @@ class MaigretWrapper:
         else:
             cmd.extend(["--json", f"{output_path}.json"])
             result["output_files"].append(f"{output_path}.json")
+
+        cmd.extend(["--", username])
 
         print(f"\n{Colors.CYAN}Running Maigret search for '{username}'...{Colors.RESET}")
         print(f"{Colors.YELLOW}Checking top {top_sites} sites (this may take a while){Colors.RESET}")

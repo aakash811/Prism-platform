@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { ExternalLink, Printer, Download, Shield, AlertTriangle, Globe, Server, Lock, User, Clock, Zap, Phone, MessageCircle, Map, GitBranch, Code, Brain, ChevronDown, ChevronUp, SendHorizontal, Mail, Copy, Eye, ShieldAlert, ArrowUp, FileSpreadsheet, FileText, Search, RefreshCw, Loader2, Github, UserCircle } from 'lucide-react';
 import type { ScanResults, ScanMeta, OpsecFinding, ModuleStatus, ModuleStatusFields, ScanType } from '@/lib/types';
-import { fetchReportBlob, generateAiSummary, sendAiChat, getMapData, getGraphData, startScan, getScan } from '@/lib/api';
+import { fetchReportBlob, fetchGraphExport, generateAiSummary, sendAiChat, getMapData, getGraphData, startScan, getScan } from '@/lib/api';
 import { useTranslations } from '@/lib/i18n';
 
 type MapMarker = {
@@ -569,6 +569,22 @@ export function ScanResults({ scan, onHome }: Props) {
       setTimeout(() => URL.revokeObjectURL(url), 0);
     } catch (e: unknown) {
       showToast(e instanceof Error ? e.message : 'JSON download failed');
+    }
+  };
+
+  const exportGraph = async (fmt: 'graphml' | 'gexf') => {
+    try {
+      const blob = await fetchGraphExport(scan.id, fmt);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `prism-${filenameSegment(scan.target)}-${filenameSegment(scan.id)}.${fmt}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+    } catch (e: unknown) {
+      showToast(e instanceof Error ? e.message : 'Graph export failed');
     }
   };
 
@@ -1479,6 +1495,15 @@ export function ScanResults({ scan, onHome }: Props) {
 
         {tab === 'graph' && (
           <Card title="Entity Graph">
+            <div className="flex items-center gap-2 mb-3">
+              <button type="button" onClick={() => exportGraph('graphml')} className="btn-ghost text-[11px] h-8 px-3">
+                <Download size={11} /> GraphML
+              </button>
+              <button type="button" onClick={() => exportGraph('gexf')} className="btn-ghost text-[11px] h-8 px-3">
+                <Download size={11} /> GEXF
+              </button>
+              <span className="text-[10px] text-text-3">Gephi / Maltego</span>
+            </div>
             <GraphView scanId={scan.id} />
           </Card>
         )}
