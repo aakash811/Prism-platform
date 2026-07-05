@@ -365,6 +365,7 @@ export interface Watchlist {
   last_status: string;
   run_count: number;
   alerts: WatchlistAlert[];
+  paused: boolean;
 }
 
 export interface JwtResult {

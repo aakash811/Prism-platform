@@ -298,7 +298,11 @@
     "back": "Zurück",
     "refresh": "Aktualisieren",
     "alerts": "Alarme",
-    "delete": "Watchlist löschen"
+    "delete": "Watchlist löschen",
+    "pause": "Watchlist pausieren",
+    "resume": "Watchlist fortsetzen",
+    "paused": "Pausiert",
+    "failedToToggle": "Watchlist konnte nicht aktualisiert werden"
   },
   "common": {
     "copy": "Kopieren",

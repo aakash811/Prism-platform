@@ -239,6 +239,9 @@ class WatchlistRequest(BaseModel):
     interval_hours: float = 24.0
     webhook_url: Optional[str] = None
 
+class WatchlistPatchRequest(BaseModel):
+    paused: bool
+
 WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "").strip()
 
 def _is_public_ip(addr) -> bool:
@@ -720,6 +723,16 @@ async def delete_watchlist_entry(request: Request, watch_id: str):
     if not watchlist.delete_watchlist(watch_id, get_principal(request)):
         return JSONResponse({"error": "Watchlist not found"}, status_code=404)
     return {"deleted": watch_id}
+
+@app.patch("/api/watchlist/{watch_id}", dependencies=[Depends(require_api_key)])
+@limiter.limit("30/minute")
+async def patch_watchlist_entry(request: Request, watch_id: str, req: WatchlistPatchRequest):
+    from web import watchlist
+    validate_scan_id(watch_id)
+    entry = watchlist.set_paused(watch_id, get_principal(request), req.paused)
+    if entry is None:
+        return JSONResponse({"error": "Watchlist not found"}, status_code=404)
+    return entry
 
 @app.post("/api/scan", dependencies=[Depends(require_api_key)])
 @limiter.limit("10/minute")

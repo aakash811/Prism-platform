@@ -263,7 +263,11 @@
     "back": "Volver",
     "refresh": "Actualizar",
     "alerts": "Alertas",
-    "delete": "Eliminar lista"
+    "delete": "Eliminar lista",
+    "pause": "Pausar lista",
+    "resume": "Reanudar lista",
+    "paused": "Pausado",
+    "failedToToggle": "Error al actualizar la lista"
   },
   "common": { "copy": "Copiar", "copied": "¡Copiado!", "copyFailed": "Error al copiar", "loading": "Cargando…", "error": "Error", "backToTop": "Volver arriba" },
   "lang": { "label": "Idioma", "en": "EN", "ru": "RU", "de": "DE", "fr": "FR", "es": "ES", "pl": "PL" }

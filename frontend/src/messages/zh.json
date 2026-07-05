@@ -298,7 +298,11 @@
     "back": "返回",
     "refresh": "刷新",
     "alerts": "提醒",
-    "delete": "删除监视列表"
+    "delete": "删除监视列表",
+    "pause": "暂停监视列表",
+    "resume": "恢复监视列表",
+    "paused": "已暂停",
+    "failedToToggle": "更新监视列表失败"
   },
   "common": {
     "copy": "复制",

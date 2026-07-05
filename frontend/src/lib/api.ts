@@ -194,6 +194,30 @@ async function del(path: string): Promise<void> {
   }
 }
 
+async function patch<T>(path: string, body: unknown): Promise<T> {
+  let r: Response;
+  try {
+    r = await fetch(apiUrl(path), {
+      method: 'PATCH',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new Error(`Cannot reach backend at ${backendLabel()} - is it running?`);
+  }
+  const text = await r.text();
+  if (!r.ok) {
+    let detail = text.slice(0, 200);
+    try { detail = JSON.parse(text)?.detail ?? detail; } catch {}
+    throw new Error(`HTTP ${r.status}: ${detail}`);
+  }
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new Error(`Invalid JSON from server: ${text.slice(0, 120)}`);
+  }
+}
+
 export function listWatchlists(): Promise<{ watchlists: Watchlist[] }> {
   return get('/api/watchlist');
 }
@@ -210,6 +234,10 @@ export function createWatchlist(body: {
 
 export function deleteWatchlist(id: string): Promise<void> {
   return del(`/api/watchlist/${id}`);
+}
+
+export function setWatchlistPaused(id: string, paused: boolean): Promise<Watchlist> {
+  return patch(`/api/watchlist/${id}`, { paused });
 }
 
 export function getWatchlistAlerts(id: string): Promise<{ id: string; alerts: WatchlistAlert[] }> {

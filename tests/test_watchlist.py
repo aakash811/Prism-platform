@@ -63,3 +63,44 @@ def test_mark_error_keeps_fingerprint(wl):
     stored = wl.get_watchlist(entry["id"])
     assert stored["last_status"] == "error"
     assert stored["fingerprint"] is not None
+
+
+def test_new_watchlist_is_not_paused(wl):
+    entry = wl.create_watchlist("alice", "example.com", "domain", ["dns"], 24)
+    assert entry["paused"] is False
+
+
+def test_set_paused_requires_owner(wl):
+    entry = wl.create_watchlist("alice", "example.com", "domain", ["dns"], 24)
+    assert wl.set_paused(entry["id"], "bob", True) is None
+    updated = wl.set_paused(entry["id"], "alice", True)
+    assert updated is not None
+    assert updated["paused"] is True
+
+
+def test_set_paused_missing_watchlist(wl):
+    assert wl.set_paused("does-not-exist", "alice", True) is None
+
+
+def test_set_paused_preserves_history_and_baseline(wl):
+    entry = wl.create_watchlist("alice", "example.com", "domain", ["shodan"], 24)
+    wl.record_run(entry["id"], {"shodan": {"open_ports": [80, 443]}})
+    wl.set_paused(entry["id"], "alice", True)
+    stored = wl.get_watchlist(entry["id"])
+    assert stored["paused"] is True
+    assert stored["fingerprint"] is not None
+    assert stored["run_count"] == 1
+
+    wl.set_paused(entry["id"], "alice", False)
+    stored = wl.get_watchlist(entry["id"])
+    assert stored["paused"] is False
+    assert stored["run_count"] == 1
+
+
+def test_due_watchlists_skips_paused(wl):
+    entry = wl.create_watchlist("alice", "example.com", "domain", ["dns"], 24)
+    other = wl.create_watchlist("alice", "other.com", "domain", ["dns"], 24)
+    wl.set_paused(entry["id"], "alice", True)
+    due_ids = {e["id"] for e in wl.due_watchlists()}
+    assert entry["id"] not in due_ids
+    assert other["id"] in due_ids

@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { Eye, Plus, Trash2, Bell, Clock, RefreshCw, ChevronDown, ChevronUp, AlertTriangle, ArrowLeft } from 'lucide-react';
-import { listWatchlists, createWatchlist, deleteWatchlist } from '@/lib/api';
+import { Eye, Plus, Trash2, Bell, Clock, RefreshCw, ChevronDown, ChevronUp, AlertTriangle, ArrowLeft, Pause, Play } from 'lucide-react';
+import { listWatchlists, createWatchlist, deleteWatchlist, setWatchlistPaused } from '@/lib/api';
 import { useTranslations } from '@/lib/i18n';
 import type { Watchlist, ScanType } from '@/lib/types';
 
@@ -14,8 +14,8 @@ function fmtTime(ts: number | null): string {
   });
 }
 
-function StatusDot({ status }: { status: string }) {
-  const color = status === 'completed' ? 'bg-green' : status === 'error' ? 'bg-red' : 'bg-text-3';
+function StatusDot({ status, paused }: { status: string; paused?: boolean }) {
+  const color = paused ? 'bg-text-3' : status === 'completed' ? 'bg-green' : status === 'error' ? 'bg-red' : 'bg-text-3';
   return <span className={`inline-block w-2 h-2 rounded-full ${color}`} />;
 }
 
@@ -76,6 +76,15 @@ export function WatchlistView({ onBack }: { onBack: () => void }) {
       setItems(prev => prev.filter(w => w.id !== id));
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : t('watchlist.failedToDelete'));
+    }
+  };
+
+  const togglePause = async (w: Watchlist) => {
+    try {
+      const updated = await setWatchlistPaused(w.id, !w.paused);
+      setItems(prev => prev.map(item => item.id === w.id ? { ...item, ...updated } : item));
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : t('watchlist.failedToToggle'));
     }
   };
 
@@ -158,7 +167,7 @@ export function WatchlistView({ onBack }: { onBack: () => void }) {
           {items.map(w => (
             <div key={w.id} className="bg-surface-1 border border-border-1 rounded-lg">
               <div className="flex items-center gap-3 p-3">
-                <StatusDot status={w.last_status} />
+                <StatusDot status={w.last_status} paused={w.paused} />
                 <div className="min-w-0 flex-1">
                   <div className="font-mono text-sm text-text-1 truncate">{w.target}</div>
                   <div className="text-[11px] text-text-3 flex items-center gap-2 flex-wrap">
@@ -166,7 +175,11 @@ export function WatchlistView({ onBack }: { onBack: () => void }) {
                     <span className="flex items-center gap-1"><Clock size={10} /> {t('watchlist.everyNHours').replace('{n}', String(w.interval_hours))}</span>
                     <span>· {w.run_count === 1 ? t('watchlist.runCountOne').replace('{n}', String(w.run_count)) : t('watchlist.runCount').replace('{n}', String(w.run_count))}</span>
                     <span>· {t('watchlist.lastRun')} {fmtTime(w.last_run)}</span>
-                    <span>· {t('watchlist.nextRun')} {fmtTime(w.next_run)}</span>
+                    {w.paused ? (
+                      <span className="text-text-2">· {t('watchlist.paused')}</span>
+                    ) : (
+                      <span>· {t('watchlist.nextRun')} {fmtTime(w.next_run)}</span>
+                    )}
                   </div>
                 </div>
                 <button
@@ -177,6 +190,14 @@ export function WatchlistView({ onBack }: { onBack: () => void }) {
                   <Bell size={12} />
                   {w.alerts.length}
                   {expanded === w.id ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                </button>
+                <button
+                  onClick={() => togglePause(w)}
+                  className="text-text-3 hover:text-text-1 transition-colors p-1"
+                  title={w.paused ? t('watchlist.resume') : t('watchlist.pause')}
+                  aria-label={w.paused ? t('watchlist.resume') : t('watchlist.pause')}
+                >
+                  {w.paused ? <Play size={14} /> : <Pause size={14} />}
                 </button>
                 <button onClick={() => remove(w.id)} className="text-text-3 hover:text-red transition-colors p-1" title={t('watchlist.delete')} aria-label={t('watchlist.delete')}>
                   <Trash2 size={14} />

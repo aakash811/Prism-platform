@@ -298,7 +298,11 @@
     "back": "Indietro",
     "refresh": "Aggiorna",
     "alerts": "Avvisi",
-    "delete": "Elimina lista"
+    "delete": "Elimina lista",
+    "pause": "Metti in pausa lista",
+    "resume": "Riprendi lista",
+    "paused": "In pausa",
+    "failedToToggle": "Impossibile aggiornare la lista"
   },
   "common": {
     "copy": "Copia",

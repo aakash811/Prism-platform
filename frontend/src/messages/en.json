@@ -298,7 +298,11 @@
     "back": "Back",
     "refresh": "Refresh",
     "alerts": "Alerts",
-    "delete": "Delete watchlist"
+    "delete": "Delete watchlist",
+    "pause": "Pause watchlist",
+    "resume": "Resume watchlist",
+    "paused": "Paused",
+    "failedToToggle": "Failed to update watchlist"
   },
   "common": {
     "copy": "Copy",

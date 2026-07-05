@@ -88,6 +88,7 @@ def create_watchlist(principal: str, target: str, scan_type: str,
         "run_count": 0,
         "fingerprint": None,
         "alerts": [],
+        "paused": False,
     }
     _save(entry)
     return _public(entry)
@@ -104,9 +105,18 @@ def delete_watchlist(watch_id: str, principal: str) -> bool:
         return False
 
 
+def set_paused(watch_id: str, principal: str, paused: bool) -> Optional[Dict[str, Any]]:
+    entry = get_watchlist(watch_id)
+    if not entry or (entry.get("owner") or ANONYMOUS) != principal:
+        return None
+    entry["paused"] = bool(paused)
+    _save(entry)
+    return _public(entry)
+
+
 def due_watchlists() -> List[Dict[str, Any]]:
     now = time.time()
-    return [e for e in _all() if (e.get("next_run") or 0) <= now]
+    return [e for e in _all() if not e.get("paused") and (e.get("next_run") or 0) <= now]
 
 
 def _flatten(obj: Any, prefix: str, out: Set[str]) -> None:

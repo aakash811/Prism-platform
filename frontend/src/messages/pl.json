@@ -494,7 +494,11 @@
     "back": "Wstecz",
     "refresh": "Odśwież",
     "alerts": "Alerty",
-    "delete": "Usuń listę"
+    "delete": "Usuń listę",
+    "pause": "Wstrzymaj listę",
+    "resume": "Wznów listę",
+    "paused": "Wstrzymano",
+    "failedToToggle": "Nie udało się zaktualizować listy"
   },
   "common": {
     "copy": "Kopiuj",
