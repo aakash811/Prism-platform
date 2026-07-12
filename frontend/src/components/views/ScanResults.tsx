@@ -194,6 +194,37 @@ function MapView({ scanId, onCopy }: { scanId: string; onCopy: (value: string) =
   );
 }
 
+// Mirrors NODE_COLORS + _shape in modules/graph_builder.py exactly.
+const LEGEND_ITEMS = [
+  { type: 'target',        color: '#00d4ff', label: 'Target' },
+  { type: 'email',         color: '#ff9f43', label: 'Email' },
+  { type: 'domain',        color: '#a29bfe', label: 'Domain' },
+  { type: 'subdomain',     color: '#74b9ff', label: 'Subdomain' },
+  { type: 'ip',            color: '#fd79a8', label: 'IP Address' },
+  { type: 'account',       color: '#55efc4', label: 'Account' },
+  { type: 'technology',    color: '#636e72', label: 'Technology' },
+  { type: 'vulnerability', color: '#d63031', label: 'Vulnerability' },
+  { type: 'organization',  color: '#fdcb6e', label: 'Organization' },
+  { type: 'url',           color: '#81ecec', label: 'URL' },
+] as const;
+
+function GraphLegend() {
+  return (
+    <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 px-1">
+      {LEGEND_ITEMS.map(({ type, color, label }) => (
+        <div key={type} className="flex items-center gap-1.5">
+          <span
+            className="inline-block h-2.5 w-2.5 rounded-full shrink-0"
+            style={{ background: color }}
+            aria-hidden
+          />
+          <span className="text-[11px] text-text-3 capitalize">{label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function GraphView({ scanId }: { scanId: string }) {
   const { t } = useTranslations();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -248,6 +279,7 @@ function GraphView({ scanId }: { scanId: string }) {
       )}
       {status === 'error' && <div className="text-red text-sm py-4">{error}</div>}
       <div ref={containerRef} className="h-72 sm:h-[480px]" style={{ height: status === 'ready' ? undefined : 0, background: 'transparent' }} />
+      {status === 'ready' && <GraphLegend />}
     </div>
   );
 }
