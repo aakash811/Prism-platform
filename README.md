@@ -623,8 +623,8 @@ GitHub Actions pipeline (`.github/workflows/ci.yml`):
 - [x] Additional locale (ZH) — 9 languages, with dark / light theme toggle
 - [x] SSRF hardening for scan/watchlist targets + maigret path-traversal fix
 
-### v2.6 — planned
-- [ ] Browser extension for one-click scans
+### v2.6 — in progress
+- [x] Browser extension for one-click scans (Firefox-ready — see [extension/](extension/))
 - [ ] *(exploring)* AI OSINT agent — autonomous multi-module investigation
 
 > Want to contribute? Pick an open issue tagged `good first issue` or open a new one.
@@ -673,6 +673,8 @@ TON:          UQAkpcYb0hKgqEwGLs08syU_4Nh-_MhwaJT3HPWqFSidLThV
 BTC:          bc1qm8zvvh2ehv3m2su6u0exmcr903cf07gn0r66y6
 ETH:          0x0639476A71255FD2C15dceD53e167952DcddEE8A
 ```
+
+**Want the browser extension in your store?** The [PRISM extension](extension/) is ready for Firefox. Publishing it to the Chrome Web Store, Yandex, or other markets costs a registration fee per store — if you want it listed in a specific one, a donation covers that and funds further development. Reach out and I'll ship it.
 
 ---
 

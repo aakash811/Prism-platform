@@ -9,7 +9,9 @@ import { ResultsSkeleton } from './ResultsSkeleton';
 import { ToolPanels } from './tools/ToolPanels';
 import { ScanComparison } from './views/ScanComparison';
 import { WatchlistView } from './views/WatchlistView';
+import { MODULE_MAP } from './Sidebar';
 import { startScan, getWsUrl, getScan, getUsage } from '@/lib/api';
+import { detectScanType, normalizeScanTarget } from '@/lib/scan-target';
 import type { ScanType, ScanStatus, ToolMode, ScanResults as ScanResultsType, ScanMeta, LiveModuleStatus, UsageData } from '@/lib/types';
 
 type View = 'idle' | 'tool' | 'scanning' | 'results' | 'compare' | 'watchlist';
@@ -247,6 +249,21 @@ export function App() {
   useEffect(() => {
     return () => { wsRef.current?.close(); };
   }, []);
+
+  const urlScanStarted = useRef(false);
+  useEffect(() => {
+    if (urlScanStarted.current) return;
+    try {
+      const raw = new URLSearchParams(window.location.search).get('target');
+      if (!raw) return;
+      urlScanStarted.current = true;
+      const target = normalizeScanTarget(raw);
+      if (!target) return;
+      const type = detectScanType(target);
+      window.history.replaceState({}, '', window.location.pathname);
+      handleScan(target, type, MODULE_MAP[type]);
+    } catch {}
+  }, [handleScan]);
 
   return (
     <div className="flex flex-col min-h-screen">

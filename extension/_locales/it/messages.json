@@ -1,0 +1,56 @@
+{
+  "extName": {
+    "message": "PRISM OSINT"
+  },
+  "extDescription": {
+    "message": "Fai clic destro su un dominio, IP, email, telefono o username per analizzarlo con il tuo PRISM."
+  },
+  "contextMenuTitle": {
+    "message": "Analizza \"%s\" con PRISM"
+  },
+  "targetLabel": {
+    "message": "Obiettivo"
+  },
+  "targetPlaceholder": {
+    "message": "dominio, IP, email, telefono, username"
+  },
+  "scanButton": {
+    "message": "Analizza"
+  },
+  "serverLabel": {
+    "message": "Server"
+  },
+  "serverNote": {
+    "message": "L'indirizzo del tuo PRISM, non l'obiettivo. Demo: getprism.su"
+  },
+  "saveButton": {
+    "message": "Salva"
+  },
+  "savedOk": {
+    "message": "Salvato"
+  },
+  "apiKeyLabel": {
+    "message": "Chiave API (opzionale)"
+  },
+  "scanning": {
+    "message": "Analisi…"
+  },
+  "complete": {
+    "message": "Completato"
+  },
+  "failed": {
+    "message": "Analisi fallita"
+  },
+  "opsecScore": {
+    "message": "Punteggio OPSEC"
+  },
+  "findings": {
+    "message": "Risultati"
+  },
+  "noFindings": {
+    "message": "Nessun risultato rilevante"
+  },
+  "openFull": {
+    "message": "Apri report completo"
+  }
+}

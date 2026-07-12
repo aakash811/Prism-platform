@@ -1,0 +1,56 @@
+{
+  "extName": {
+    "message": "PRISM OSINT"
+  },
+  "extDescription": {
+    "message": "Rechtsklick auf eine Domain, IP, E-Mail, Telefonnummer oder einen Nutzernamen, um sie mit deinem PRISM zu scannen."
+  },
+  "contextMenuTitle": {
+    "message": "„%s“ mit PRISM scannen"
+  },
+  "targetLabel": {
+    "message": "Ziel"
+  },
+  "targetPlaceholder": {
+    "message": "Domain, IP, E-Mail, Telefon, Nutzername"
+  },
+  "scanButton": {
+    "message": "Scannen"
+  },
+  "serverLabel": {
+    "message": "Server"
+  },
+  "serverNote": {
+    "message": "Die Adresse deines PRISM, nicht das Ziel. Demo: getprism.su"
+  },
+  "saveButton": {
+    "message": "Speichern"
+  },
+  "savedOk": {
+    "message": "Gespeichert"
+  },
+  "apiKeyLabel": {
+    "message": "API-Schlüssel (optional)"
+  },
+  "scanning": {
+    "message": "Scannen…"
+  },
+  "complete": {
+    "message": "Fertig"
+  },
+  "failed": {
+    "message": "Scan fehlgeschlagen"
+  },
+  "opsecScore": {
+    "message": "OPSEC-Score"
+  },
+  "findings": {
+    "message": "Ergebnisse"
+  },
+  "noFindings": {
+    "message": "Keine auffälligen Ergebnisse"
+  },
+  "openFull": {
+    "message": "Vollständigen Bericht öffnen"
+  }
+}

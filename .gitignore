@@ -8,6 +8,7 @@ secrets/
 watchlist_data/
 scan_data/
 module_cache/
+prism-extension.zip
 
 __pycache__/
 *.py[cod]
