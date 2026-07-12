@@ -675,6 +675,15 @@ BTC:          bc1qm8zvvh2ehv3m2su6u0exmcr903cf07gn0r66y6
 ETH:          0x0639476A71255FD2C15dceD53e167952DcddEE8A
 ```
 
+<table>
+  <tr>
+    <td align="center"><img src="docs/donate/usdt-trc20.png" width="120"><br><sub>USDT (TRC20)</sub></td>
+    <td align="center"><img src="docs/donate/ton.png" width="120"><br><sub>TON</sub></td>
+    <td align="center"><img src="docs/donate/btc.png" width="120"><br><sub>BTC</sub></td>
+    <td align="center"><img src="docs/donate/eth.png" width="120"><br><sub>ETH</sub></td>
+  </tr>
+</table>
+
 **Want the browser extension in your store?** The [PRISM extension](extension/) is ready for Firefox. Publishing it to the Chrome Web Store, Yandex, or other markets costs a registration fee per store — if you want it listed in a specific one, a donation covers that and funds further development. Reach out and I'll ship it.
 
 ---
