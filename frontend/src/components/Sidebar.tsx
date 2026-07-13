@@ -30,6 +30,7 @@ interface Props {
   onLoadScan?: (scanId: string) => void;
   onCompare?: (a: string, b: string) => void;
   isRunning: boolean;
+  isStarting?: boolean;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -55,7 +56,7 @@ function useRecentScans() {
   return { recents, add, clear };
 }
 
-export function Sidebar({ onScan, onLoadScan, onCompare, isRunning, isOpen, onClose }: Props) {
+export function Sidebar({ onScan, onLoadScan, onCompare, isRunning, isStarting = false, isOpen, onClose }: Props) {
   const { t } = useTranslations();
   const [target, setTarget] = useState('');
   const [scanType, setScanType] = useState<ScanType>('domain');
@@ -211,11 +212,11 @@ export function Sidebar({ onScan, onLoadScan, onCompare, isRunning, isOpen, onCl
 
         <button
           type="submit"
-          disabled={!target.trim() || isRunning || modules.length === 0}
+          disabled={!target.trim() || isRunning || isStarting || modules.length === 0}
           className="btn-primary mt-1"
         >
-          {isRunning ? <Loader2 size={13} className="spin" /> : <Play size={13} />}
-          {isRunning ? t('sidebar.scanning') : t('sidebar.runScan')}
+          {(isRunning || isStarting) ? <Loader2 size={13} className="spin" /> : <Play size={13} />}
+          {isRunning ? t('sidebar.scanning') : isStarting ? t('sidebar.scanning') : t('sidebar.runScan')}
         </button>
       </form>
 

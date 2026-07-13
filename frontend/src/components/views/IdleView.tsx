@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { FileText, Mail, Bitcoin, QrCode, ChevronRight, Globe, User, Phone, Shield, Database, Zap, Eye, Activity, Network, Hash, Binary, KeyRound, Search } from 'lucide-react';
+import { FileText, Mail, Bitcoin, QrCode, ChevronRight, Globe, User, Phone, Shield, Database, Zap, Eye, Activity, Network, Hash, Binary, KeyRound, Search, Loader2 } from 'lucide-react';
 import { useTranslations } from '@/lib/i18n';
 import { getPrismDemoMode } from '@/lib/prism-config';
 import { detectScanType, normalizeScanTarget } from '@/lib/scan-target';
@@ -29,9 +29,10 @@ type CapsKey = typeof CAPS_KEYS[number];
 interface Props {
   onTool: (mode: ToolMode) => void;
   onScan: (target: string, type: ScanType, modules: string[]) => void;
+  isStarting?: boolean;
 }
 
-export function IdleView({ onTool, onScan }: Props) {
+export function IdleView({ onTool, onScan, isStarting = false }: Props) {
   const { t } = useTranslations();
   const demoMode = getPrismDemoMode();
   const [targetIdx, setTargetIdx] = useState(0);
@@ -110,11 +111,11 @@ export function IdleView({ onTool, onScan }: Props) {
         </div>
         <button
           type="submit"
-          disabled={!query.trim()}
+          disabled={!query.trim() || isStarting}
           className="btn-primary h-[42px] px-4 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label={t('sidebar.runScan')}
         >
-          <Search size={15} />
+          {isStarting ? <Loader2 size={15} className="spin" /> : <Search size={15} />}
         </button>
       </form>
 

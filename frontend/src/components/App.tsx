@@ -9,9 +9,9 @@ import { ResultsSkeleton } from './ResultsSkeleton';
 import { ToolPanels } from './tools/ToolPanels';
 import { ScanComparison } from './views/ScanComparison';
 import { WatchlistView } from './views/WatchlistView';
-import { MODULE_MAP } from './Sidebar';
 import { startScan, getWsUrl, getScan, getUsage } from '@/lib/api';
 import { detectScanType, normalizeScanTarget } from '@/lib/scan-target';
+import { MODULE_MAP } from './Sidebar';
 import type { ScanType, ScanStatus, ToolMode, ScanResults as ScanResultsType, ScanMeta, LiveModuleStatus, UsageData } from '@/lib/types';
 
 type View = 'idle' | 'tool' | 'scanning' | 'results' | 'compare' | 'watchlist';
@@ -47,7 +47,9 @@ export function App() {
   const [totalModules, setTotalModules] = useState(0);
   const [compareIds, setCompareIds] = useState<[string, string] | null>(null);
   const [usage, setUsage] = useState<UsageData | null>(null);
+  const [isStarting, setIsStarting] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
+  const urlScanStarted = useRef(false);
   const usageLimitedRef = useRef(true);
 
   const handleHome = useCallback(() => {
@@ -228,29 +230,23 @@ export function App() {
     setProgressLog([]);
     setModuleStatuses({});
     setTotalModules(modules.length);
-    setScanStatus('running');
-    setView('scanning');
     setScanMeta(null);
+    setIsStarting(true);
     try {
       const { scan_id } = await startScan(target, type, modules);
+      setIsStarting(false);
+      setScanStatus('running');
+      setView('scanning');
       setScanId(scan_id);
       connectWs(scan_id);
       handleUsageRefresh();
     } catch (e: unknown) {
+      setIsStarting(false);
       setScanStatus('failed');
       setProgressLog([`Failed to start scan: ${e instanceof Error ? e.message : 'Unknown error'}`]);
     }
   }, [connectWs, handleUsageRefresh]);
 
-  useEffect(() => {
-    handleUsageRefresh();
-  }, [handleUsageRefresh]);
-
-  useEffect(() => {
-    return () => { wsRef.current?.close(); };
-  }, []);
-
-  const urlScanStarted = useRef(false);
   useEffect(() => {
     if (urlScanStarted.current) return;
     try {
@@ -265,14 +261,22 @@ export function App() {
     } catch {}
   }, [handleScan]);
 
+  useEffect(() => {
+    handleUsageRefresh();
+  }, [handleUsageRefresh]);
+
+  useEffect(() => {
+    return () => { wsRef.current?.close(); };
+  }, []);
+
   return (
     <div className="flex flex-col min-h-screen">
       <Topbar status={scanStatus} usage={usage} onHome={handleHome} onWatchlist={handleWatchlist} onMenuToggle={() => setSidebarOpen(v => !v)} />
       <div className="flex flex-1 relative">
         {sidebarOpen && <div onClick={() => setSidebarOpen(false)} className="fixed inset-0 bg-black/50 z-40 md:hidden" />}
-        <Sidebar onScan={handleScan} onLoadScan={handleLoadScan} onCompare={handleCompare} isRunning={scanStatus === 'running'} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <Sidebar onScan={handleScan} onLoadScan={handleLoadScan} onCompare={handleCompare} isRunning={scanStatus === 'running'} isStarting={isStarting} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         <main className="flex-1 min-w-0 relative z-10">
-          {view === 'idle' && <IdleView onTool={handleTool} onScan={handleScan} />}
+          {view === 'idle' && <IdleView onTool={handleTool} onScan={handleScan} isStarting={isStarting} />}
           {view === 'tool' && toolMode && (
             <ToolPanels mode={toolMode} onBack={() => setView('idle')} />
           )}
